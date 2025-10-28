@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from \'react\';
-import { getSupabase } from \'../services/supabaseClient\';
-import { useAuth } from \'./useAuth\';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { getSupabase } from '../services/supabaseClient';
+import { useAuth } from './useAuth';
 
 type SchoolContextType = {
  escola: any | null;
@@ -13,7 +13,7 @@ const SchoolContext = createContext<SchoolContextType | null>(null);
 
 export const useSchool = () => {
  const ctx = useContext(SchoolContext);
- if (!ctx) throw new Error(\'useSchool must be used within a SchoolProvider\');
+ if (!ctx) throw new Error('useSchool must be used within a SchoolProvider');
  return ctx;
 };
 
@@ -32,10 +32,10 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
      return;
    }
    setLoading(true);
-   const { data: perfil } = await supabase.from(\'usuarios\').select(\'*\').eq(\'id\', user.id).single();
+   const { data: perfil } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
    setUsuario(perfil ?? null);
    if (perfil?.escola_id) {
-     const { data: escolaData } = await supabase.from(\'escolas\').select(\'*\').eq(\'id\', perfil.escola_id).single();
+     const { data: escolaData } = await supabase.from('escolas').select('*').eq('id', perfil.escola_id).single();
      setEscola(escolaData ?? null);
    } else {
      setEscola(null);
@@ -51,3 +51,4 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
    </SchoolContext.Provider>
  );
 };
+
