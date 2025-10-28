@@ -1,23 +1,11 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import Header from '../components/Header'
 
 export default function LandingPage() {
   return (
     <main className="min-h-[80vh] bg-gradient-to-b from-white to-[#f7f9ff]">
-      <header className="w-full border-b bg-white/70 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/AvaliaPro_logo.svg" alt="AvaliaPro" className="h-7" />
-            <span className="sr-only">AvaliaPro</span>
-          </div>
-          <nav className="flex items-center gap-6 text-sm">
-            <a href="/" className="text-gray-700 hover:text-black">Início</a>
-            <Link to="/login" className="text-gray-700 hover:text-black">Entrar</Link>
-            <Link to="/dashboard" className="text-gray-700 hover:text-black">Dashboard</Link>
-          </nav>
-        </div>
-      </header>
-
+      <Header />
       <section className="px-6">
         <div className="max-w-6xl mx-auto py-16 grid gap-12 md:grid-cols-2 items-center">
           <div className="space-y-5">
