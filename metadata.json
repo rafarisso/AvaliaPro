@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Copy of AvaliaPro",
+  "description": "An educational SaaS for teachers and schools to create evaluations, reports, and generate AI-powered lesson plans and presentations.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
