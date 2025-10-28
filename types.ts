@@ -1,3 +1,6 @@
+// FIX: Removed the triple-slash directive for Vite client types from this central
+// file as it was causing a resolution error. The directive is now placed
+// directly in the files that use `import.meta.env`.
 
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -189,7 +192,20 @@ export type Database = {
           criado_em?: string;
         };
         // FIX: Added Relationships property to ensure proper Supabase type inference.
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "alunos_escola_id_fkey",
+            columns: ["escola_id"],
+            referencedRelation: "escolas",
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "alunos_turma_id_fkey",
+            columns: ["turma_id"],
+            referencedRelation: "turmas",
+            referencedColumns: ["id"],
+          },
+        ];
       };
       apresentacoes: {
         // FIX: Using type aliases for Row definitions to fix Supabase type inference issues.
@@ -219,7 +235,20 @@ export type Database = {
           criado_em?: string;
         };
         // FIX: Added Relationships property to ensure proper Supabase type inference.
-        Relationships: [];
+        Relationships: [
+           {
+            foreignKeyName: "apresentacoes_escola_id_fkey",
+            columns: ["escola_id"],
+            referencedRelation: "escolas",
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "apresentacoes_criado_por_fkey",
+            columns: ["criado_por"],
+            referencedRelation: "usuarios",
+            referencedColumns: ["id"],
+          }
+        ];
       };
       avaliacoes: {
         // FIX: Using type aliases for Row definitions to fix Supabase type inference issues.
@@ -263,7 +292,20 @@ export type Database = {
           criado_em?: string;
         };
         // FIX: Added Relationships property to ensure proper Supabase type inference.
-        Relationships: [];
+        Relationships: [
+           {
+            foreignKeyName: "avaliacoes_escola_id_fkey",
+            columns: ["escola_id"],
+            referencedRelation: "escolas",
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "avaliacoes_criado_por_fkey",
+            columns: ["criado_por"],
+            referencedRelation: "usuarios",
+            referencedColumns: ["id"],
+          }
+        ];
       };
       escolas: {
         // FIX: Using type aliases for Row definitions to fix Supabase type inference issues.
@@ -317,7 +359,20 @@ export type Database = {
           criado_em?: string;
         };
         // FIX: Added Relationships property to ensure proper Supabase type inference.
-        Relationships: [];
+        Relationships: [
+           {
+            foreignKeyName: "planos_escola_id_fkey",
+            columns: ["escola_id"],
+            referencedRelation: "escolas",
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "planos_criado_por_fkey",
+            columns: ["criado_por"],
+            referencedRelation: "usuarios",
+            referencedColumns: ["id"],
+          }
+        ];
       };
       questoes: {
         // FIX: Using type aliases for Row definitions to fix Supabase type inference issues.
@@ -343,7 +398,20 @@ export type Database = {
           escola_id?: string | null;
         };
         // FIX: Added Relationships property to ensure proper Supabase type inference.
-        Relationships: [];
+        Relationships: [
+           {
+            foreignKeyName: "questoes_escola_id_fkey",
+            columns: ["escola_id"],
+            referencedRelation: "escolas",
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "questoes_avaliacao_id_fkey",
+            columns: ["avaliacao_id"],
+            referencedRelation: "avaliacoes",
+            referencedColumns: ["id"],
+          }
+        ];
       };
       relatorios: {
         // FIX: Using type aliases for Row definitions to fix Supabase type inference issues.
@@ -367,7 +435,32 @@ export type Database = {
           criado_em?: string;
         };
         // FIX: Added Relationships property to ensure proper Supabase type inference.
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "relatorios_aluno_id_fkey",
+            columns: ["aluno_id"],
+            referencedRelation: "alunos",
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "relatorios_avaliacao_id_fkey",
+            columns: ["avaliacao_id"],
+            referencedRelation: "avaliacoes",
+            referencedColumns: ["id"],
+          },
+           {
+            foreignKeyName: "relatorios_escola_id_fkey",
+            columns: ["escola_id"],
+            referencedRelation: "escolas",
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "relatorios_criado_por_fkey",
+            columns: ["criado_por"],
+            referencedRelation: "usuarios",
+            referencedColumns: ["id"],
+          }
+        ];
       };
       subscriptions: {
         // FIX: Using type aliases for Row definitions to fix Supabase type inference issues.
@@ -395,7 +488,14 @@ export type Database = {
           criado_em?: string;
         };
         // FIX: Added Relationships property to ensure proper Supabase type inference.
-        Relationships: [];
+        Relationships: [
+            {
+                foreignKeyName: "subscriptions_usuario_id_fkey",
+                columns: ["usuario_id"],
+                referencedRelation: "usuarios",
+                referencedColumns: ["id"],
+            }
+        ];
       };
       turmas: {
         // FIX: Using type aliases for Row definitions to fix Supabase type inference issues.
@@ -417,7 +517,20 @@ export type Database = {
           criado_em?: string;
         };
         // FIX: Added Relationships property to ensure proper Supabase type inference.
-        Relationships: [];
+        Relationships: [
+           {
+            foreignKeyName: "turmas_escola_id_fkey",
+            columns: ["escola_id"],
+            referencedRelation: "escolas",
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "turmas_criado_por_fkey",
+            columns: ["criado_por"],
+            referencedRelation: "usuarios",
+            referencedColumns: ["id"],
+          }
+        ];
       };
       usuarios: {
         // FIX: Using type aliases for Row definitions to fix Supabase type inference issues.
@@ -441,7 +554,21 @@ export type Database = {
           criado_em?: string;
         };
         // FIX: Added Relationships property to ensure proper Supabase type inference.
-        Relationships: [];
+        Relationships: [
+           {
+            foreignKeyName: "usuarios_escola_id_fkey",
+            columns: ["escola_id"],
+            referencedRelation: "escolas",
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "usuarios_id_fkey",
+            columns: ["id"],
+            referencedRelation: "users",
+            referencedColumns: ["id"],
+            relationName: "usuarios_id_fkey"
+          }
+        ];
       };
     };
     Views: {
