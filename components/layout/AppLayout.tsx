@@ -7,7 +7,7 @@ export default function AppLayout() {
       <header style={{padding:'16px', borderBottom:'1px solid #eee', display:'flex', gap:16}}>
         <strong style={{fontSize:18}}>AvaliaPro</strong>
         <nav style={{display:'flex', gap:12}}>
-          <Link to="/">Início</Link>
+          <Link to="/">InÃ­cio</Link>
           <Link to="/login">Entrar</Link>
           <Link to="/dashboard">Dashboard</Link>
         </nav>
@@ -16,7 +16,7 @@ export default function AppLayout() {
         <Outlet />
       </main>
       <footer style={{padding:'16px', borderTop:'1px solid #eee', textAlign:'center'}}>
-        © {new Date().getFullYear()} AvaliaPro
+        Â© {new Date().getFullYear()} AvaliaPro
       </footer>
     </>
   );

@@ -11,7 +11,7 @@ export default function LandingPage() {
             <span className="sr-only">AvaliaPro</span>
           </div>
           <nav className="flex items-center gap-6 text-sm">
-            <a href="/" className="text-gray-700 hover:text-black">InÌcio</a>
+            <a href="/" className="text-gray-700 hover:text-black">In√≠cio</a>
             <Link to="/login" className="text-gray-700 hover:text-black">Entrar</Link>
             <Link to="/dashboard" className="text-gray-700 hover:text-black">Dashboard</Link>
           </nav>
@@ -22,17 +22,17 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto py-16 grid gap-12 md:grid-cols-2 items-center">
           <div className="space-y-5">
             <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-              AvaliaÁıes e planos com IA <span className="text-primary">em minutos</span>
+              Avalia√ß√µes e planos com IA <span className="text-primary">em minutos</span>
             </h1>
             <p className="text-gray-600 text-lg">
-              Gemini + Supabase para criar provas, planos e relatÛrios. 15 dias gr·tis, depois R$ 39,90/mÍs.
+              Gemini + Supabase para criar provas, planos e relat√≥rios. 15 dias gr√°tis, depois R$ 39,90/m√™s.
             </p>
             <div className="flex gap-3">
               <a
                 href="/api/create-checkout"
                 className="inline-flex items-center justify-center rounded-xl bg-primary text-white px-5 py-3 hover:bg-primary-dark transition shadow-sm"
               >
-                ComeÁar gr·tis (15 dias)
+                Come√ßar gr√°tis (15 dias)
               </a>
               <Link
                 to="/login"
@@ -41,7 +41,7 @@ export default function LandingPage() {
                 Entrar
               </Link>
             </div>
-            <p className="text-sm text-gray-500">Sem cobranÁa no perÌodo de teste. Cancele quando quiser.</p>
+            <p className="text-sm text-gray-500">Sem cobran√ßa no per√≠odo de teste. Cancele quando quiser.</p>
           </div>
 
           <div className="relative">
@@ -53,17 +53,17 @@ export default function LandingPage() {
                   <p className="text-2xl font-semibold">+1.2k</p>
                 </div>
                 <div className="rounded-xl border p-4">
-                  <p className="text-xs text-gray-500">AvaliaÁıes geradas</p>
+                  <p className="text-xs text-gray-500">Avalia√ß√µes geradas</p>
                   <p className="text-2xl font-semibold">48k</p>
                 </div>
                 <div className="rounded-xl border p-4">
-                  <p className="text-xs text-gray-500">Tempo mÈdio</p>
+                  <p className="text-xs text-gray-500">Tempo m√©dio</p>
                   <p className="text-2xl font-semibold">2min</p>
                 </div>
               </div>
               <div className="mt-4 rounded-xl border p-4">
-                <p className="text-sm text-gray-600">ìMinha rotina mudou. Em minutos tenho materiais prontos.î</p>
-                <p className="text-xs text-gray-500 mt-1">ó Usu·rio AvaliaPro</p>
+                <p className="text-sm text-gray-600">‚ÄúMinha rotina mudou. Em minutos tenho materiais prontos.‚Äù</p>
+                <p className="text-xs text-gray-500 mt-1">‚Äî Usu√°rio AvaliaPro</p>
               </div>
             </div>
           </div>

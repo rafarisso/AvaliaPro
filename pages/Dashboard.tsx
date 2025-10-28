@@ -47,7 +47,7 @@ export default function Dashboard() {
     return (
       <section className="px-6 py-16">
         <div className="max-w-3xl mx-auto text-center space-y-4">
-          <h2 className="text-3xl font-bold">FaÁa login para acessar o dashboard</h2>
+          <h2 className="text-3xl font-bold">Fa√ßa login para acessar o dashboard</h2>
           <a href="/login" className="inline-flex items-center justify-center rounded-lg bg-primary text-white px-5 py-3 hover:bg-primary-dark transition">Entrar</a>
         </div>
       </section>
@@ -65,7 +65,7 @@ export default function Dashboard() {
             <img src="/AvaliaPro_logo.svg" className="h-7" alt="AvaliaPro" />
             <div>
               <h1 className="text-2xl font-semibold">Dashboard</h1>
-              <p className="text-gray-600 text-sm">Usu·rio: <span className="font-medium">{user.email}</span></p>
+              <p className="text-gray-600 text-sm">Usu√°rio: <span className="font-medium">{user.email}</span></p>
             </div>
           </div>
           <button onClick={logout} className="rounded-lg border px-4 py-2 hover:bg-gray-50">Sair</button>
@@ -92,18 +92,18 @@ export default function Dashboard() {
           <div className="rounded-2xl border bg-white p-5">
             <p className="text-sm text-gray-500">Atividades recentes</p>
             <ul className="mt-2 space-y-2 text-sm text-gray-700">
-              <li>ï AvaliaÁ„o de Geografia criada</li>
-              <li>ï Plano de aula salvo</li>
-              <li>ï RelatÛrio exportado</li>
+              <li>‚Ä¢ Avalia√ß√£o de Geografia criada</li>
+              <li>‚Ä¢ Plano de aula salvo</li>
+              <li>‚Ä¢ Relat√≥rio exportado</li>
             </ul>
           </div>
 
           <div className="rounded-2xl border bg-white p-5">
             <p className="text-sm text-gray-500">Atalhos</p>
             <div className="mt-3 grid grid-cols-1 gap-2">
-              <a className="rounded-lg border px-3 py-2 hover:bg-gray-50" href="#">Criar avaliaÁ„o (IA)</a>
+              <a className="rounded-lg border px-3 py-2 hover:bg-gray-50" href="#">Criar avalia√ß√£o (IA)</a>
               <a className="rounded-lg border px-3 py-2 hover:bg-gray-50" href="#">Gerar plano de aula</a>
-              <a className="rounded-lg border px-3 py-2 hover:bg-gray-50" href="#">RelatÛrios</a>
+              <a className="rounded-lg border px-3 py-2 hover:bg-gray-50" href="#">Relat√≥rios</a>
             </div>
           </div>
         </section>

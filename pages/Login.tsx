@@ -26,7 +26,7 @@ export default function Login() {
       <h2>Entrar</h2>
       <input placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
       <input type="password" placeholder="Senha" value={password} onChange={e=>setPassword(e.target.value)} />
-      <button disabled={loading}>{loading ? 'Entrando…' : 'Entrar'}</button>
+      <button disabled={loading}>{loading ? 'Entrandoâ€¦' : 'Entrar'}</button>
     </form>
   );
 }
