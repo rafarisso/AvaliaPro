@@ -1,27 +1,29 @@
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
-import { AuthProvider, useAuth } from './hooks/useAuth.tsx';
-import { SchoolProvider, useSchool } from './hooks/useSchool.tsx';
+import { AuthProvider } from './hooks/useAuth';
+import { SchoolProvider } from './hooks/useSchool';
+import { useAuth } from './hooks/useAuth';
+import { useSchool } from './hooks/useSchool';
 
-import AppLayout from './components/layout/AppLayout.tsx';
-import Dashboard from './pages/Dashboard.tsx';
-import Login from './pages/Login.tsx';
-import Register from './pages/Register.tsx';
-import GerarRelatorio from './pages/GerarRelatorio.tsx';
-import GerarPlano from './pages/GerarPlano.tsx';
-import GerarApresentacao from './pages/GerarApresentacao.tsx';
-import Turmas from './pages/Turmas.tsx';
-import Alunos from './pages/Alunos.tsx';
-import Avaliacoes from './pages/Avaliacoes.tsx';
-import Configuracoes from './pages/Configuracoes.tsx';
-import Assinatura from './pages/Assinatura.tsx';
-import LandingPage from './pages/LandingPage.tsx';
-import ErrorBoundary from './components/ErrorBoundary.tsx';
-import { ToastProvider } from './hooks/useToast.tsx';
-import Onboarding from './pages/Onboarding.tsx';
-import { Spinner } from './components/ui/Spinner.tsx';
-import { ThemeProvider } from './hooks/useTheme.tsx';
+import AppLayout from './components/layout/AppLayout';
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import GerarRelatorio from './pages/GerarRelatorio';
+import GerarPlano from './pages/GerarPlano';
+import GerarApresentacao from './pages/GerarApresentacao';
+import Turmas from './pages/Turmas';
+import Alunos from './pages/Alunos';
+import Avaliacoes from './pages/Avaliacoes';
+import Configuracoes from './pages/Configuracoes';
+import Assinatura from './pages/Assinatura';
+import LandingPage from './pages/LandingPage';
+import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './hooks/useToast';
+import Onboarding from './pages/Onboarding';
+import { Spinner } from './components/ui/Spinner';
+import { ThemeProvider } from './hooks/useTheme';
 
 const AppRoutes: React.FC = () => {
   const { session, loading: authLoading } = useAuth();
