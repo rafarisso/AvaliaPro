@@ -1,1 +1,54 @@
-<!doctype html><html lang="pt-br"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>AvaliaPro</title><link rel="stylesheet" href="/index.css"/><link rel="icon" href="data:,"/></head><body><div id="root"></div><script src="/env.js"></script><script type="module" src="./index.tsx"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AvaliaPro</title>
+
+    <!-- Fonte -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="/index.css" />
+    <link rel="icon" href="data:," />
+
+    <!-- Tailwind via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Poppins', 'sans-serif'],
+            },
+            colors: {
+              primary: { DEFAULT: '#3366FF', dark: '#2952CC' },
+              secondary: '#00A3FF',
+              light: '#F5F5F5',
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Estilos adicionais -->
+    <style type="text/tailwindcss">
+      body {@apply bg-light text-gray-800 transition-colors duration-300;}
+      @layer utilities {
+        .prose { color:#374151; max-width:65ch; }
+        .prose h1,.prose h2,.prose h3,.prose h4,.prose strong { font-weight:600; color:#1f2937; }
+        .prose p { margin-top:1.25em; margin-bottom:1.25em; }
+      }
+      .dark body {@apply bg-gray-900 text-gray-200;}
+    </style>
+  </head>
+
+  <body class="font-sans">
+    <div id="root"></div>
+    <script src="/env.js"></script>
+    <script type="module" src="./index.tsx"></script>
+  </body>
+</html>
