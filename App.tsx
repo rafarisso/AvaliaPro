@@ -1,10 +1,10 @@
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
-import { AuthProvider } from './hooks/useAuth';
-import { SchoolProvider } from './hooks/useSchool';
-import { useAuth } from './hooks/useAuth';
-import { useSchool } from './hooks/useSchool';
+import { AuthProvider, useAuth } from './hooks/useAuth';
+import { SchoolProvider, useSchool } from './hooks/useSchool';
+import { ToastProvider } from './hooks/useToast';
+import { ThemeProvider } from './hooks/useTheme';
 
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
@@ -20,10 +20,8 @@ import Configuracoes from './pages/Configuracoes';
 import Assinatura from './pages/Assinatura';
 import LandingPage from './pages/LandingPage';
 import ErrorBoundary from './components/ErrorBoundary';
-import { ToastProvider } from './hooks/useToast';
 import Onboarding from './pages/Onboarding';
 import { Spinner } from './components/ui/Spinner';
-import { ThemeProvider } from './hooks/useTheme';
 
 const AppRoutes: React.FC = () => {
   const { session, loading: authLoading } = useAuth();
