@@ -1,3 +1,8 @@
-/* placeholder */
-html, body { margin: 0; padding: 0; }
-
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; font-family: system-ui, Arial, sans-serif; color: #111; background: #fff; }
+a { color: #0a58ca; text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { padding: 8px 12px; border: 1px solid #ccc; background: #f7f7f7; cursor: pointer; border-radius: 6px; }
+input { padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
+h1, h2 { margin: 0 0 8px; }
+main { min-height: 60vh; }
