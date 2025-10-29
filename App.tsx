@@ -1,25 +1,20 @@
-import React from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { AuthProvider } from './hooks/useAuth';
-import { SchoolProvider } from './hooks/useSchool';
-import { ThemeProvider } from './hooks/useTheme';
-import { ToastProvider } from './hooks/useToast';
-import AppLayout from './components/layout/AppLayout';
-import LandingPage from './pages/LandingPage';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
+import React from 'react'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { AuthProvider } from './hooks/useAuth'
+import { SchoolProvider } from './hooks/useSchool'
+import { ThemeProvider } from './hooks/useTheme'
+import { ToastProvider } from './hooks/useToast'
+import LandingPage from './pages/LandingPage'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import AuthCallback from './pages/AuthCallback'
 
 const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <AppLayout />,
-    children: [
-      { index: true, element: <LandingPage /> },
-      { path: 'login', element: <Login /> },
-      { path: 'dashboard', element: <Dashboard /> },
-    ],
-  },
-]);
+  { path: '/', element: <LandingPage /> },
+  { path: '/auth/callback', element: <AuthCallback /> },
+  { path: '/login', element: <Login /> },
+  { path: '/dashboard', element: <Dashboard /> },
+])
 
 export default function App() {
   return (
@@ -32,5 +27,5 @@ export default function App() {
         </AuthProvider>
       </ToastProvider>
     </ThemeProvider>
-  );
+  )
 }
