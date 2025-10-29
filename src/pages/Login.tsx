@@ -1,4 +1,4 @@
-ï»¿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../hooks/useToast'
@@ -19,7 +19,11 @@ export default function Login() {
       showToast('Login realizado!', 'success')
       navigate('/dashboard')
     } catch (error: any) {
-      showToast(error?.message ?? 'NÃ£o foi possÃ­vel entrar', 'error')
+      console.error('[Auth]', error?.message ?? error)
+      showToast(
+        'Falha ao autenticar. Verifique se o domínio está permitido nas URLs do Supabase e se as chaves estão corretas (env.js).',
+        'error'
+      )
     } finally {
       setLoading(false)
     }
@@ -29,7 +33,11 @@ export default function Login() {
     try {
       await loginWithOAuth('google')
     } catch (error: any) {
-      showToast(error?.message ?? 'NÃ£o foi possÃ­vel iniciar o login com Google', 'error')
+      console.error('[Auth]', error?.message ?? error)
+      showToast(
+        'Falha ao autenticar. Verifique se o domínio está permitido nas URLs do Supabase e se as chaves estão corretas (env.js).',
+        'error'
+      )
     }
   }
 
@@ -67,7 +75,7 @@ export default function Login() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              placeholder="••••••••"
             />
           </div>
         </div>
@@ -77,7 +85,7 @@ export default function Login() {
           disabled={loading}
           className="w-full rounded-xl bg-primary text-white py-3 font-medium hover:bg-primary-dark transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {loading ? 'Entrandoâ€¦' : 'Entrar'}
+          {loading ? 'Entrando…' : 'Entrar'}
         </button>
 
         <div className="flex items-center gap-3">

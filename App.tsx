@@ -7,6 +7,7 @@ import { ToastProvider } from './hooks/useToast'
 import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Health from './pages/Health'
 import AuthCallback from './pages/AuthCallback'
 
 const router = createBrowserRouter([
@@ -14,6 +15,7 @@ const router = createBrowserRouter([
   { path: '/auth/callback', element: <AuthCallback /> },
   { path: '/login', element: <Login /> },
   { path: '/dashboard', element: <Dashboard /> },
+  { path: '/health', element: <Health /> },
 ])
 
 export default function App() {
@@ -29,3 +31,7 @@ export default function App() {
     </ThemeProvider>
   )
 }
+
+
+
+

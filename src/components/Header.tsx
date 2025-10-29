@@ -2,6 +2,8 @@
 import { Link } from 'react-router-dom'
 
 export default function Header() {
+  const isDev = Boolean(import.meta.env?.DEV)
+
   return (
     <header className="w-full border-b bg-white/70 backdrop-blur">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -13,6 +15,9 @@ export default function Header() {
           <Link to="/" className="text-gray-700 hover:text-black">Início</Link>
           <Link to="/login" className="text-gray-700 hover:text-black">Entrar</Link>
           <Link to="/dashboard" className="text-gray-700 hover:text-black">Dashboard</Link>
+          {isDev && (
+            <Link to="/health" className="text-gray-500 hover:text-black">Health</Link>
+          )}
         </nav>
       </div>
     </header>

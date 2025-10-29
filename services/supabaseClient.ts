@@ -1,2 +1,2 @@
-export { getSupabase } from '../src/services/supabaseClient';
+export { supabase, getSupabase } from '../src/services/supabaseClient';
 
