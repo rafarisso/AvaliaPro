@@ -1,5 +1,13 @@
-﻿import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react'
 import type { Session, User } from '@supabase/supabase-js'
+import { checkAccess } from '../src/utils/access'
 import { getSupabase } from '../services/supabaseClient'
 
 interface AuthContextType {
@@ -24,21 +32,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const auditAccess = useCallback(async (currentUser: User | null) => {
+    if (!currentUser) return
+    const { allowed, reason } = await checkAccess(currentUser)
+    if (!allowed) {
+      console.warn('Acesso permitido temporariamente no modo protótipo:', reason)
+    }
+  }, [])
+
   useEffect(() => {
     const supabase = getSupabase()
     let mounted = true
 
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return
-      setSession(data.session ?? null)
-      setUser(data.session?.user ?? null)
+      const nextSession = data.session ?? null
+      const nextUser = nextSession?.user ?? null
+      setSession(nextSession)
+      setUser(nextUser)
+      void auditAccess(nextUser)
       setLoading(false)
     })
 
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!mounted) return
-      setSession(newSession ?? null)
-      setUser(newSession?.user ?? null)
+      const nextSession = newSession ?? null
+      const nextUser = nextSession?.user ?? null
+      setSession(nextSession)
+      setUser(nextUser)
+      void auditAccess(nextUser)
       setLoading(false)
     })
 
@@ -46,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       mounted = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, [auditAccess])
 
   const loginWithPassword = async (email: string, password: string) => {
     const supabase = getSupabase()
@@ -56,8 +78,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(false)
       throw error
     }
-    setSession(data.session ?? null)
-    setUser(data.session?.user ?? null)
+    const nextSession = data.session ?? null
+    const nextUser = nextSession?.user ?? null
+    setSession(nextSession)
+    setUser(nextUser)
+    void auditAccess(nextUser)
     setLoading(false)
   }
 

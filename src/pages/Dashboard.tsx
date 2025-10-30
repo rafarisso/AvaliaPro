@@ -1,5 +1,6 @@
-﻿import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Header from '../components/Header'
+import PrototypeBanner from '../components/PrototypeBanner'
 import { useAuth } from '../../hooks/useAuth'
 import { getSupabase } from '../services/supabaseClient'
 import { getEnv } from '../services/env'
@@ -27,6 +28,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     let mounted = true
+
     ;(async () => {
       if (!user) {
         setLoading(false)
@@ -43,7 +45,12 @@ export default function Dashboard() {
 
       if (error) {
         console.error(error)
-        setProfile({ id: user.id, full_name: null, subscription_status: 'INACTIVE', trial_ends_at: null })
+        setProfile({
+          id: user.id,
+          full_name: null,
+          subscription_status: 'INACTIVE',
+          trial_ends_at: null,
+        })
       } else {
         setProfile(data as Profile)
       }
@@ -58,31 +65,33 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <main className="min-h-[80vh] bg-gradient-to-b from-white to-[#f7f9ff]">
+      <div className="min-h-screen bg-gray-50">
+        <PrototypeBanner />
         <Header />
-        <section className="px-6">
-          <div className="max-w-3xl mx-auto py-20 text-center text-gray-600">Carregando…</div>
-        </section>
-      </main>
+        <main className="px-6">
+          <div className="mx-auto max-w-3xl py-20 text-center text-gray-600">Carregando…</div>
+        </main>
+      </div>
     )
   }
 
   if (!user && !PROTOTYPE_MODE) {
     return (
-      <main className="min-h-[80vh] bg-gradient-to-b from-white to-[#f7f9ff]">
+      <div className="min-h-screen bg-gray-50">
+        <PrototypeBanner />
         <Header />
-        <section className="px-6">
-          <div className="max-w-3xl mx-auto py-16 text-center space-y-4">
+        <main className="px-6">
+          <div className="mx-auto max-w-3xl space-y-4 py-16 text-center">
             <h2 className="text-3xl font-bold">Faça login para acessar o dashboard</h2>
             <a
               href="/login"
-              className="inline-flex items-center justify-center rounded-lg bg-primary text-white px-5 py-3 hover:bg-primary-dark transition"
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-3 text-white transition hover:bg-primary-dark"
             >
               Entrar
             </a>
           </div>
-        </section>
-      </main>
+        </main>
+      </div>
     )
   }
 
@@ -92,88 +101,108 @@ export default function Dashboard() {
   const displayEmail = user?.email ?? 'demo@avaliapro.com'
 
   return (
-    <main className="min-h-[80vh] bg-gradient-to-b from-white to-[#f7f9ff]">
+    <div className="min-h-screen bg-gray-50">
+      <PrototypeBanner />
       <Header />
-      <section className="px-6">
-        <div className="max-w-6xl mx-auto py-10 space-y-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold">Dashboard</h1>
-              {PROTOTYPE_MODE && (
-                <span className="ml-2 inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5">
-                  Modo Protótipo
-                </span>
+      <main className="px-6 pb-16">
+        <div className="mx-auto flex max-w-6xl flex-col gap-8 py-10">
+          <div className="flex flex-col gap-6 rounded-3xl bg-white p-8 shadow-sm">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-semibold text-gray-900">Dashboard</h1>
+                {(PROTOTYPE_MODE || !unlocked) && (
+                  <span className="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-700">
+                    Modo Protótipo
+                  </span>
+                )}
+              </div>
+              {user ? (
+                <button
+                  onClick={logout}
+                  className="inline-flex items-center justify-center rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+                >
+                  Sair
+                </button>
+              ) : (
+                <a
+                  href="/login"
+                  className="inline-flex items-center justify-center rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+                >
+                  Entrar
+                </a>
               )}
             </div>
-            {user ? (
-              <button onClick={logout} className="rounded-lg border px-4 py-2 hover:bg-gray-50">
-                Sair
-              </button>
-            ) : (
-              <a href="/login" className="rounded-lg border px-4 py-2 hover:bg-gray-50">
-                Entrar
-              </a>
-            )}
+            <div className="text-sm text-gray-600">
+              Usuário atual: <span className="font-medium">{displayEmail}</span>
+            </div>
           </div>
 
-          <div className="text-sm text-gray-600">Usuário atual: <span className="font-medium">{displayEmail}</span></div>
-
           <div className="grid gap-6 md:grid-cols-3">
-            <div className="rounded-2xl border bg-white p-5">
-              <p className="text-sm text-gray-500">Status da assinatura</p>
-              <div className="mt-2">
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <p className="text-sm font-medium text-gray-500">Status da assinatura</p>
+              <div className="mt-3 flex items-center gap-2">
                 {status === 'ACTIVE' && (
-                  <span className="inline-flex rounded-full bg-green-100 text-green-700 text-sm px-3 py-1">ATIVA</span>
+                  <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">
+                    ATIVA
+                  </span>
                 )}
                 {status === 'TRIALING' && (
-                  <span className="inline-flex rounded-full bg-yellow-100 text-yellow-800 text-sm px-3 py-1">EM TESTE</span>
+                  <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700">
+                    EM TESTE
+                  </span>
                 )}
                 {status === 'INACTIVE' && (
-                  <span className="inline-flex rounded-full bg-gray-100 text-gray-700 text-sm px-3 py-1">INATIVA</span>
+                  <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700">
+                    INATIVA
+                  </span>
                 )}
               </div>
               {status === 'TRIALING' && dleft !== null && (
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="mt-3 text-sm text-gray-600">
                   Dias restantes: <strong>{dleft}</strong>
                 </p>
               )}
               {!unlocked && (
                 <a
                   href="/api/create-checkout"
-                  className="mt-4 inline-flex items-center justify-center rounded-lg bg-primary text-white px-4 py-2 hover:bg-primary-dark transition"
+                  className="mt-5 inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-white transition hover:bg-primary-dark"
                 >
                   Assinar agora
                 </a>
               )}
-              {unlocked && <p className="text-sm text-gray-500 mt-3">Acesso liberado (protótipo).</p>}
+              {unlocked && (
+                <p className="mt-5 text-sm text-gray-500">
+                  Acesso liberado para experimentação — aproveite o protótipo.
+                </p>
+              )}
             </div>
 
-            <div className="rounded-2xl border bg-white p-5">
-              <p className="text-sm text-gray-500">Atividades recentes</p>
-              <ul className="mt-2 space-y-2 text-sm text-gray-700">
-                <li>• Avaliação de Geografia criada</li>
-                <li>• Plano de aula salvo</li>
-                <li>• Relatório exportado</li>
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <p className="text-sm font-medium text-gray-500">Atividades recentes</p>
+              <ul className="mt-3 space-y-2 text-sm text-gray-700">
+                <li>- Avaliação de Geografia criada</li>
+                <li>- Plano de aula salvo</li>
+                <li>- Relatório exportado</li>
               </ul>
             </div>
 
-            <div className="rounded-2xl border bg-white p-5">
-              <p className="text-sm text-gray-500">Atalhos</p>
-              <div className="mt-3 grid grid-cols-1 gap-2">
-                <a className="rounded-lg border px-3 py-2 hover:bg-gray-50" href="#">
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <p className="text-sm font-medium text-gray-500">Atalhos</p>
+              <div className="mt-4 grid grid-cols-1 gap-3">
+                <a className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100" href="#">
                   Criar avaliação (IA)
                 </a>
-                <a className="rounded-lg border px-3 py-2 hover:bg-gray-50" href="#">
+                <a className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100" href="#">
                   Gerar plano de aula
                 </a>
-                <a className="rounded-lg border px-3 py-2 hover:bg-gray-50" href="#">
+                <a className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100" href="#">
                   Relatórios
                 </a>
               </div>
             </div>
           </div>
         </div>
-      </section>
-    </main>
+      </main>
+    </div>
   )
 }
