@@ -12,5 +12,5 @@ export async function checkAccess(user: any): Promise<AccessCheckResult> {
   if (!billing) return { allowed: true }
 
   if (user?.assinatura_status === "ativa") return { allowed: true }
-  return { allowed: false, reason: "Assinatura inativa." }
+  return { allowed: false, reason: "Plano indisponível." }
 }
