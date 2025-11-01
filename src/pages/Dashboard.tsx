@@ -1,263 +1,200 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import Header from "../components/Header";
-import PrototypeBanner from "../components/PrototypeBanner";
-import { BILLING_ENABLED, SHOW_PROTOTYPE_BANNER } from "../flags";
-import { auditEvent, useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { getSupabase } from "@/services/supabaseClient";
+import { getMyProfile } from "@/services/profile";
 import { listMyAssessments } from "@/services/assessments";
 import { listMyLessonPlans } from "@/services/lessonPlans";
 import { listMySlideDecks } from "@/services/slides";
 
-type RecentEvent = {
-  id: string;
-  event: string;
-  created_at: string;
-  meta?: Record<string, unknown> | null;
+type SchoolInfo = {
+  name: string;
+  city?: string | null;
+  state?: string | null;
+  shift?: string | null;
 };
 
 export default function Dashboard() {
-  const { user, profile, logout } = useAuth();
+  const { user, profile: authProfile } = useAuth();
   const supabase = useMemo(() => getSupabase(), []);
 
-  const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
-  const [lastCreation, setLastCreation] = useState<{ label: string; href: string } | null>(null);
+  const [profile, setProfile] = useState<any>(authProfile);
+  const [grades, setGrades] = useState<string[]>([]);
+  const [subjects, setSubjects] = useState<string[]>([]);
+  const [schools, setSchools] = useState<SchoolInfo[]>([]);
   const [assessments, setAssessments] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
   const [decks, setDecks] = useState<any[]>([]);
 
   useEffect(() => {
-    void auditEvent("dashboard_view");
-  }, []);
-
-  useEffect(() => {
     if (!user) return;
-
-    const loadEvents = async () => {
-      const { data, error } = await supabase
-        .from("user_events")
-        .select("id,event,created_at,meta")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(12);
-
-      if (error) {
-        console.warn("[Dashboard] erro ao buscar eventos:", error);
-        return;
-      }
-
-      const events = (data as RecentEvent[]) ?? [];
-      setRecentEvents(events);
-
-      const last = events.find((evt) =>
-        [
-          "assessment_created",
-          "rubric_created",
-          "slides_template_saved",
-          "lesson_plan_template_saved",
-          "adapted_assessment_template_saved",
-        ].includes(evt.event)
-      );
-
-      if (!last) {
-        setLastCreation(null);
-        return;
-      }
-
-      const mapping: Record<string, { label: string; href: string }> = {
-        assessment_created: { label: "Avaliacao", href: "/avaliacoes/nova" },
-        rubric_created: { label: "Rubrica", href: "/create/rubric" },
-        slides_template_saved: { label: "Slides", href: "/slides/novo" },
-        lesson_plan_template_saved: { label: "Plano de aula", href: "/planos/nova" },
-        adapted_assessment_template_saved: { label: "Avaliacao adaptada", href: "/create/assessment/adapted" },
-      };
-
-      setLastCreation(mapping[last.event]);
-    };
-
-    void loadEvents();
-  }, [supabase, user]);
-
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
+    void (async () => {
       try {
-        const [myAssessments, myPlans, myDecks] = await Promise.all([
-          listMyAssessments(user.id),
-          listMyLessonPlans(user.id),
-          listMySlideDecks(user.id),
-        ]);
-        setAssessments(myAssessments);
-        setPlans(myPlans);
-        setDecks(myDecks);
+        const prof = await getMyProfile();
+        setProfile(prof);
+        if (Array.isArray(prof?.teaching_grade_levels)) {
+          setGrades(prof.teaching_grade_levels as string[]);
+        }
       } catch (error) {
-        console.warn("[Dashboard] erro ao carregar listas recentes:", error);
+        console.warn("[Dashboard] falha ao carregar perfil:", error);
       }
     })();
   }, [user]);
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {SHOW_PROTOTYPE_BANNER ? <PrototypeBanner /> : null}
-      <Header />
+  useEffect(() => {
+    if (!user) return;
+    void (async () => {
+      try {
+        const [assess, lesson, slide] = await Promise.all([
+          listMyAssessments(user.id),
+          listMyLessonPlans(user.id),
+          listMySlideDecks(user.id),
+        ]);
+        setAssessments(assess);
+        setPlans(lesson);
+        setDecks(slide);
+      } catch (error) {
+        console.warn("[Dashboard] falha ao carregar listas recentes:", error);
+      }
+    })();
+  }, [user]);
 
-      <main className="mx-auto max-w-6xl space-y-8 px-4 py-8">
-        <header className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm font-medium text-blue-600">AvaliaPro</p>
-            <h1 className="text-3xl font-semibold text-gray-900">Bem-vindo ao painel</h1>
-            <p className="text-sm text-gray-600">
-              Crie avaliacoes, planos e slides com IA. Tudo fica salvo no Supabase para acompanhar depois.
-            </p>
-          </div>
-          <div className="flex flex-col items-start gap-2 text-sm text-gray-600">
-            <span>
-              Usuario logado: <strong>{user?.email ?? "visitante@avaliapro.com"}</strong>
-            </span>
-            {profile?.full_name ? <span>Nome: {profile.full_name}</span> : null}
-            {user ? (
-              <button
-                onClick={logout}
-                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-              >
-                Sair
-              </button>
-            ) : null}
-          </div>
+  useEffect(() => {
+    if (!user) return;
+    void (async () => {
+      try {
+        const { data: subjRows } = await supabase
+          .from("teacher_subjects")
+          .select("subjects(name)")
+          .eq("profile_id", user.id);
+        const names = (subjRows ?? [])
+          .map((row: any) => row.subjects?.name)
+          .filter(Boolean) as string[];
+        setSubjects(Array.from(new Set(names)));
+      } catch (error) {
+        console.warn("[Dashboard] falha ao carregar disciplinas:", error);
+      }
+    })();
+  }, [supabase, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    void (async () => {
+      try {
+        const { data: schoolRows } = await supabase
+          .from("teacher_schools")
+          .select("shift, schools(name, city, state)")
+          .eq("profile_id", user.id);
+        const formatted =
+          schoolRows?.map((row: any) => ({
+            name: row.schools?.name ?? "",
+            city: row.schools?.city,
+            state: row.schools?.state,
+            shift: row.shift,
+          })) ?? [];
+        setSchools(formatted.filter((s) => s.name));
+      } catch (error) {
+        console.warn("[Dashboard] falha ao carregar escolas:", error);
+      }
+    })();
+  }, [supabase, user]);
+
+  const displayName = profile?.full_name || authProfile?.full_name || user?.email || "professor(a)";
+
+  return (
+    <div className="min-h-screen bg-[#F5F7FA]">
+      <div className="mx-auto w-full max-w-6xl px-4 py-8">
+        <header className="mb-6">
+          <h1 className="text-3xl font-semibold text-gray-900">Olá, {displayName} 👋</h1>
+          <p className="text-sm text-gray-600">Atalhos personalizados para suas turmas e disciplinas.</p>
         </header>
 
-        {BILLING_ENABLED ? (
-          <section className="rounded-2xl border border-dashed border-blue-200 bg-blue-50 p-6 text-sm text-blue-700 shadow-inner">
-            Stripe desativado neste ambiente. Quando ativarmos cobranca, os planos aparecem aqui.
-          </section>
-        ) : (
-          <section className="rounded-2xl border border-blue-100 bg-white p-6 text-sm text-blue-700 shadow">
-            Modo completo liberado para testes. Use os fluxos e compartilhe feedback com o time.
-          </section>
-        )}
-
-        {lastCreation ? (
-          <section className="rounded-2xl border bg-white p-6 shadow">
-            <h2 className="text-lg font-semibold text-gray-900">Continue de onde parou</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Retome o ultimo conteudo criado para finalizar ajustes ou compartilhar.
-            </p>
-            <Link
-              to={lastCreation.href}
-              className="mt-4 inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-            >
-              Abrir {lastCreation.label}
-            </Link>
-          </section>
-        ) : null}
-
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">Atalhos rapidos</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Link to="/avaliacoes/nova" className="block rounded-lg bg-white p-5 text-sm font-semibold text-gray-800 shadow transition hover:shadow-lg">
-              Criar avaliacao
-            </Link>
-            <Link to="/planos/nova" className="block rounded-lg bg-white p-5 text-sm font-semibold text-gray-800 shadow transition hover:shadow-lg">
-              Plano de aula
-            </Link>
-            <Link to="/slides/novo" className="block rounded-lg bg-white p-5 text-sm font-semibold text-gray-800 shadow transition hover:shadow-lg">
-              Gerar slides
-            </Link>
-            <Link
-              to="/create/assessment/adapted"
-              className="block rounded-lg bg-white p-5 text-sm font-semibold text-gray-800 shadow transition hover:shadow-lg"
-            >
-              Avaliacao adaptada
-            </Link>
-          </div>
+        <section className="mb-8 space-y-3">
+          {grades.length ? (
+            <div className="flex flex-wrap gap-2">
+              {grades.map((grade) => (
+                <span key={grade} className="chip bg-blue-50 text-blue-700">
+                  {grade}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {subjects.length ? (
+            <div className="flex flex-wrap gap-2">
+              {subjects.map((subject) => (
+                <span key={subject} className="chip bg-emerald-50 text-emerald-700">
+                  {subject}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </section>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <CardList title="Minhas avaliacoes" emptyMessage="Sem avaliacoes recentes" items={assessments} />
-          <CardList title="Planos de aula" emptyMessage="Sem planos recentes" items={plans} />
-          <CardList title="Slides" emptyMessage="Sem decks recentes" items={decks} />
-        </div>
+        <section className="grid gap-4 md:grid-cols-3">
+          <Link to="/avaliacoes/nova" className="card hover:shadow-lg transition">
+            <div className="text-lg font-semibold text-gray-900">Criar avaliação</div>
+            <p className="text-sm text-gray-600">Monte provas alinhadas à BNCC em minutos.</p>
+          </Link>
+          <Link to="/planos/nova" className="card hover:shadow-lg transition">
+            <div className="text-lg font-semibold text-gray-900">Plano de aula</div>
+            <p className="text-sm text-gray-600">Organize objetivos, materiais e sequência didática.</p>
+          </Link>
+          <Link to="/slides/novo" className="card hover:shadow-lg transition">
+            <div className="text-lg font-semibold text-gray-900">Gerar slides</div>
+            <p className="text-sm text-gray-600">Apresente conteúdos com bullets e prompts visuais.</p>
+          </Link>
+        </section>
 
-        <section className="grid gap-4 md:grid-cols-[2fr,1fr]">
-          <div className="rounded-2xl bg-white p-6 shadow">
-            <h3 className="text-lg font-semibold text-gray-900">Atividades recentes</h3>
-            {recentEvents.length ? (
-              <ul className="mt-4 space-y-3 text-sm text-gray-700">
-                {recentEvents.slice(0, 6).map((event) => (
-                  <li key={event.id} className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-medium">{formatEventName(event.event)}</p>
-                      {event.meta?.titulo ? (
-                        <p className="text-xs text-gray-500">{String(event.meta.titulo)}</p>
-                      ) : null}
-                    </div>
-                    <span className="text-xs text-gray-400">
-                      {new Date(event.created_at).toLocaleString("pt-BR")}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-4 text-sm text-gray-500">
-                Gere ou salve conteudos para acompanhar o historico por aqui.
-              </p>
-            )}
+        <section className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="card">
+            <h2 className="text-lg font-semibold text-gray-900">Avaliações recentes</h2>
+            <ul className="mt-3 space-y-2 text-sm text-gray-700">
+              {assessments.slice(0, 3).map((item: any) => (
+                <li key={item.id}>{item.title}</li>
+              ))}
+              {!assessments.length ? <li className="text-gray-500">Nenhuma avaliação salva ainda.</li> : null}
+            </ul>
           </div>
-          <div className="rounded-2xl bg-white p-6 shadow">
-            <h3 className="text-lg font-semibold text-gray-900">Proximos passos</h3>
-            <ul className="mt-3 space-y-2 text-sm text-gray-600">
-              <li>- Conectar IA para sugestoes de questoes adaptadas.</li>
-              <li>- Importar planilhas de notas para cruzar com avaliacoes.</li>
-              <li>- Exportar relatorios em PDF com personalizacao.</li>
+          <div className="card">
+            <h2 className="text-lg font-semibold text-gray-900">Planos recentes</h2>
+            <ul className="mt-3 space-y-2 text-sm text-gray-700">
+              {plans.slice(0, 3).map((item: any) => (
+                <li key={item.id}>{item.title}</li>
+              ))}
+              {!plans.length ? <li className="text-gray-500">Nenhum plano salvo ainda.</li> : null}
+            </ul>
+          </div>
+          <div className="card">
+            <h2 className="text-lg font-semibold text-gray-900">Slides recentes</h2>
+            <ul className="mt-3 space-y-2 text-sm text-gray-700">
+              {decks.slice(0, 3).map((item: any) => (
+                <li key={item.id}>{item.title}</li>
+              ))}
+              {!decks.length ? <li className="text-gray-500">Nenhum deck salvo ainda.</li> : null}
             </ul>
           </div>
         </section>
-      </main>
+
+        <section className="mt-8 card">
+          <h2 className="text-xl font-semibold text-gray-900">Minhas escolas</h2>
+          {schools.length ? (
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {schools.map((school, index) => (
+                <div key={`${school.name}-${index}`} className="rounded-xl border border-gray-100 p-4">
+                  <p className="font-semibold text-gray-900">{school.name}</p>
+                  <p className="text-sm text-gray-600">
+                    {[school.city, school.state].filter(Boolean).join(" / ")} • {school.shift ?? "manhã"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-gray-600">
+              Adicione suas escolas no onboarding para organizar os turnos e turmas.
+            </p>
+          )}
+        </section>
+      </div>
     </div>
   );
-}
-
-function CardList({
-  title,
-  emptyMessage,
-  items,
-}: {
-  title: string;
-  emptyMessage: string;
-  items: { id: string; title: string }[];
-}) {
-  return (
-    <div className="rounded-2xl bg-white p-6 shadow">
-      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-      {items.length ? (
-        <ul className="mt-3 space-y-2 text-sm text-gray-700">
-          {items.slice(0, 3).map((item) => (
-            <li key={item.id} className="truncate">
-              {item.title}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-3 text-sm text-gray-500">{emptyMessage}</p>
-      )}
-    </div>
-  );
-}
-
-function formatEventName(event: string) {
-  const mapping: Record<string, string> = {
-    assessment_structured_generated: "Avaliacao estruturada gerada",
-    assessment_created: "Avaliacao salva",
-    rubric_generated: "Rubrica gerada",
-    rubric_created: "Rubrica salva",
-    slides_outline_generated: "Slides gerados",
-    slides_template_saved: "Slides salvos",
-    lesson_plan_ai_generated: "Plano de aula gerado",
-    lesson_plan_template_saved: "Plano de aula salvo",
-    adapted_assessment_ai_generated: "Avaliacao adaptada gerada",
-    adapted_assessment_template_saved: "Avaliacao adaptada salva",
-    tutor_answered: "Tutor IA respondido",
-    students_imported: "Alunos importados",
-  };
-  return mapping[event] ?? event;
 }

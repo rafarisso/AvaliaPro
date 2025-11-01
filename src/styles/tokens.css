@@ -1,0 +1,38 @@
+:root {
+  --radius: 1rem;
+  --shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
+  --brand: #3366ff;
+  --bg: #f5f7fa;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+}
+
+.btn {
+  padding: 0.625rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.btn-ghost {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.chip {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}

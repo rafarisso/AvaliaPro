@@ -22,9 +22,12 @@ import Tutor from "./src/pages/Tutor"
 import AssessmentCreator from "@/features/assessments/AssessmentCreator"
 import LessonPlanCreator from "@/features/lessonPlans/LessonPlanCreator"
 import SlidesCreator from "@/features/slides/SlidesCreator"
+import OnboardingWizard from "@/features/onboarding/OnboardingWizard"
 
 function AppRoutes() {
-  const { user, loading } = useAuth()
+  const { user, loading, profile } = useAuth()
+
+  const needsOnboarding = !!user && !profile?.onboarding_completed
 
   if (loading) {
     return (
@@ -36,18 +39,102 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/avaliacoes/nova" element={<AssessmentCreator />} />
-      <Route path="/planos/nova" element={<LessonPlanCreator />} />
-      <Route path="/slides/novo" element={<SlidesCreator />} />
-      <Route path="/create/slides" element={<CreateSlides />} />
-      <Route path="/create/assessment" element={<CreateAssessment />} />
-      <Route path="/create/assessment/adapted" element={<CreateAdaptedAssessment />} />
-      <Route path="/create/lesson-plan" element={<CreateLessonPlan />} />
-      <Route path="/create/rubric" element={<CreateRubric />} />
-      <Route path="/tutor" element={<Tutor />} />
+      <Route
+        path="/"
+        element={<Navigate to={user ? (needsOnboarding ? "/onboarding" : "/dashboard") : "/login"} replace />}
+      />
+      <Route
+        path="/login"
+        element={user ? <Navigate to={needsOnboarding ? "/onboarding" : "/dashboard"} replace /> : <Login />}
+      />
+      <Route
+        path="/onboarding"
+        element={
+          <RequireAuth>
+            {profile?.onboarding_completed ? <Navigate to="/dashboard" replace /> : <OnboardingWizard />}
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <RequireOnboarding>
+            <Dashboard />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path="/avaliacoes/nova"
+        element={
+          <RequireOnboarding>
+            <AssessmentCreator />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path="/planos/nova"
+        element={
+          <RequireOnboarding>
+            <LessonPlanCreator />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path="/slides/novo"
+        element={
+          <RequireOnboarding>
+            <SlidesCreator />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path="/create/slides"
+        element={
+          <RequireOnboarding>
+            <CreateSlides />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path="/create/assessment"
+        element={
+          <RequireOnboarding>
+            <CreateAssessment />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path="/create/assessment/adapted"
+        element={
+          <RequireOnboarding>
+            <CreateAdaptedAssessment />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path="/create/lesson-plan"
+        element={
+          <RequireOnboarding>
+            <CreateLessonPlan />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path="/create/rubric"
+        element={
+          <RequireOnboarding>
+            <CreateRubric />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path="/tutor"
+        element={
+          <RequireOnboarding>
+            <Tutor />
+          </RequireOnboarding>
+        }
+      />
       <Route path="/criar-avaliacao" element={<Navigate to="/create/assessment" replace />} />
       <Route path="/criar-plano" element={<Navigate to="/create/lesson-plan" replace />} />
       <Route path="/criar-slides" element={<Navigate to="/create/slides" replace />} />
@@ -62,6 +149,25 @@ function AppRoutes() {
       <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
     </Routes>
   )
+}
+
+function RequireAuth({ children }: { children: React.ReactElement }) {
+  const { user } = useAuth()
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+  return children
+}
+
+function RequireOnboarding({ children }: { children: React.ReactElement }) {
+  const { user, profile } = useAuth()
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+  if (!profile?.onboarding_completed) {
+    return <Navigate to="/onboarding" replace />
+  }
+  return children
 }
 
 export default function App() {
