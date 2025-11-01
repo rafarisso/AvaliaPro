@@ -21,6 +21,15 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@/services/*": [
+        "./src/services/*"
+      ],
+      "@/features/*": [
+        "./src/features/*"
+      ],
+      "@/pages/*": [
+        "./src/pages/*"
       ]
     },
     "allowImportingTsExtensions": true,
