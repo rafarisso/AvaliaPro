@@ -1,83 +1,235 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import StepIndicator from "./StepIndicator";
+import Step1Topic from "./Step1Topic";
+import Step2Content from "./Step2Content";
+import Step3Config from "./Step3Config";
+import Step4Review from "./Step4Review";
+import BookOpenIcon from "./icons/BookOpenIcon";
+import CameraIcon from "./icons/CameraIcon";
+import FileTextIcon from "./icons/FileTextIcon";
+import SparklesIcon from "./icons/SparklesIcon";
+import ChevronLeftIcon from "./icons/ChevronLeftIcon";
+import ChevronRightIcon from "./icons/ChevronRightIcon";
 import { callAI } from "@/services/ai";
 import { saveAssessment, type GeneratedAssessment } from "@/services/assessments";
-import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import Spinner from "./Spinner";
+
+type FormState = {
+  topic: string;
+  discipline: string;
+  grade: string;
+  skills: string;
+  referenceText: string;
+  evidenceImage: string | null;
+  numQuestions: number;
+  level: "facil" | "medio" | "dificil";
+  questionType: "multipla_escolha" | "dissertativa" | "mista";
+  includeAnswerKey: boolean;
+};
+
+const initialState: FormState = {
+  topic: "",
+  discipline: "Ciencias",
+  grade: "6o ano",
+  skills: "",
+  referenceText: "",
+  evidenceImage: null,
+  numQuestions: 6,
+  level: "medio",
+  questionType: "multipla_escolha",
+  includeAnswerKey: true,
+};
+
+const steps = [
+  { id: 1, title: "Tema", description: "Base do conteudo", icon: BookOpenIcon },
+  { id: 2, title: "Contexto", description: "BNCC e turma", icon: CameraIcon },
+  { id: 3, title: "Configuracao", description: "Formato da avaliacao", icon: FileTextIcon },
+  { id: 4, title: "Revisao", description: "Ajustes finais", icon: SparklesIcon },
+];
 
 export default function AssessmentCreator() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [topic, setTopic] = useState("");
-  const [grade, setGrade] = useState("6º ano");
-  const [discipline, setDiscipline] = useState("Geografia");
-  const [numQuestions, setNumQuestions] = useState(6);
-  const [level, setLevel] = useState("médio");
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState<FormState>(initialState);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<GeneratedAssessment | null>(null);
-  const canGenerate = topic.trim().length >= 3;
 
-  async function handleGenerate() {
-    if (!user) return;
+  const canAdvance = useMemo(() => {
+    if (step === 1) {
+      return form.topic.trim().length >= 3 && form.discipline.trim().length > 0 && form.grade.trim().length > 0;
+    }
+    if (step === 2) {
+      return true;
+    }
+    if (step === 3) {
+      return !loading;
+    }
+    return true;
+  }, [form.topic, form.discipline, form.grade, step, loading]);
+
+  const goNext = () => {
+    if (step < 4 && canAdvance) {
+      setStep(step + 1);
+    }
+  };
+
+  const goPrev = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!user) {
+      alert("Entre com sua conta para gerar a avaliacao.");
+      return;
+    }
+    if (form.topic.trim().length < 3) {
+      alert("Informe um tema para continuar.");
+      return;
+    }
+
     setLoading(true);
+    setError(null);
     try {
-      const payload = { topic, grade, discipline, numQuestions, level };
+      const payload = {
+        topic: form.topic,
+        grade: form.grade,
+        discipline: form.discipline,
+        numQuestions: form.numQuestions,
+        level: form.level,
+        questionType: form.questionType,
+        skills: form.skills,
+        referenceText: form.referenceText,
+        includeAnswerKey: form.includeAnswerKey,
+      };
       const data: GeneratedAssessment = await callAI("generate-structured", payload);
       setGenerated(data);
+      setStep(4);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha inesperada.");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  async function handleSave() {
+  const handleSave = async () => {
     if (!user || !generated) return;
-    const id = await saveAssessment(user.id, generated);
-    navigate(`/avaliacoes/${id}`);
-  }
+    setSaving(true);
+    try {
+      const id = await saveAssessment(user.id, generated);
+      alert("Avaliacao salva com sucesso!");
+      navigate(`/avaliacoes/${id}`);
+    } catch (err) {
+      alert(`Nao foi possivel salvar: ${err instanceof Error ? err.message : "erro desconhecido"}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-semibold mb-4">Criar avaliação</h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="mx-auto w-full max-w-4xl px-4 py-10">
+        <header className="mb-8 flex flex-col gap-2">
+          <p className="text-sm font-semibold text-blue-600">Fluxo guiado</p>
+          <h1 className="text-3xl font-semibold text-gray-900">Criar avaliacao com IA</h1>
+          <p className="text-sm text-gray-600">
+            Complete cada etapa com contexto da sua turma. Use o passo 4 para revisar e salvar direto no Supabase.
+          </p>
+        </header>
 
-      <div className="grid gap-4">
-        <input className="border rounded p-3" placeholder="Tema (ex.: Tipos de rochas)"
-               value={topic} onChange={e=>setTopic(e.target.value)} />
-        <div className="grid grid-cols-3 gap-3">
-          <input className="border rounded p-3" value={grade} onChange={e=>setGrade(e.target.value)} />
-          <input className="border rounded p-3" value={discipline} onChange={e=>setDiscipline(e.target.value)} />
-          <input className="border rounded p-3" type="number" min={3} max={20}
-                 value={numQuestions} onChange={e=>setNumQuestions(+e.target.value)} />
+        <StepIndicator steps={steps} currentStep={step} />
+
+        <div className="space-y-6">
+          {step === 1 ? (
+            <Step1Topic
+              topic={form.topic}
+              discipline={form.discipline}
+              grade={form.grade}
+              onChange={(values) => setForm((current) => ({ ...current, ...values }))}
+            />
+          ) : null}
+
+          {step === 2 ? (
+            <Step2Content
+              skills={form.skills}
+              referenceText={form.referenceText}
+              evidenceImage={form.evidenceImage ?? undefined}
+              onChange={(values) => setForm((current) => ({ ...current, ...values }))}
+            />
+          ) : null}
+
+          {step === 3 ? (
+            <Step3Config
+              numQuestions={form.numQuestions}
+              level={form.level}
+              questionType={form.questionType}
+              includeAnswerKey={form.includeAnswerKey}
+              onChange={(values) => setForm((current) => ({ ...current, ...values }))}
+            />
+          ) : null}
+
+          {step === 4 ? (
+            <Step4Review
+              loading={loading}
+              assessment={generated}
+              error={error}
+              onRetry={handleGenerate}
+              onSave={handleSave}
+              saving={saving}
+            />
+          ) : null}
         </div>
-        <select className="border rounded p-3 w-48" value={level} onChange={e=>setLevel(e.target.value)}>
-          <option>fácil</option><option>médio</option><option>difícil</option>
-        </select>
 
-        <div className="flex gap-3">
-          <button onClick={handleGenerate} disabled={!canGenerate || loading}
-                  className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50">
-            {loading ? "Gerando..." : "Gerar com IA"}
+        <footer className="mt-8 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={goPrev}
+            disabled={step === 1}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <ChevronLeftIcon className="h-4 w-4" />
+            Voltar
           </button>
-          {generated && (
-            <button onClick={handleSave}
-                    className="px-4 py-2 rounded bg-green-600 text-white">
-              Salvar
+
+          {step < 3 ? (
+            <button
+              type="button"
+              disabled={!canAdvance}
+              onClick={goNext}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Avancar
+              <ChevronRightIcon className="h-4 w-4" />
+            </button>
+          ) : step === 3 ? (
+            <div className="flex items-center gap-3">
+              {loading ? <Spinner /> : null}
+              <button
+                type="button"
+                disabled={!canAdvance || loading}
+                onClick={handleGenerate}
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "Gerando..." : "Gerar avaliacao"}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setStep(3)}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+            >
+              Ajustar configuracoes
             </button>
           )}
-        </div>
-
-        {generated && (
-          <div className="border rounded p-4 bg-white">
-            <h2 className="text-xl font-medium mb-2">{generated.assessmentTitle}</h2>
-            <ol className="space-y-2 list-decimal ml-5">
-              {generated.questions.map(q=>(
-                <li key={q.questionNumber}>
-                  <div className="font-medium">{q.questionText} ({q.points} pts)</div>
-                  {q.options?.length ? <ul className="list-disc ml-5">{q.options.map((o,i)=><li key={i}>{o}</li>)}</ul> : null}
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
+        </footer>
       </div>
     </div>
   );

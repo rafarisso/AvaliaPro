@@ -1,60 +1,179 @@
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { callAI } from "@/services/ai";
 import { saveLessonPlan, type GeneratedLessonPlan } from "@/services/lessonPlans";
-import { useAuth } from "@/hooks/useAuth";
 
 export default function LessonPlanCreator() {
   const { user } = useAuth();
   const [topic, setTopic] = useState("");
-  const [grade, setGrade] = useState("6º ano");
+  const [grade, setGrade] = useState("6o ano");
+  const [focus, setFocus] = useState("");
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<GeneratedLessonPlan | null>(null);
 
-  async function handleGenerate() {
+  const disabled = topic.trim().length < 3 || loading;
+
+  const handleGenerate = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const p = await callAI("generate-lesson-plan", { topic, grade });
-      setPlan(p);
+      const payload = { topic, grade, focus };
+      const generated: GeneratedLessonPlan = await callAI("generate-lesson-plan", payload);
+      setPlan(generated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha inesperada ao gerar plano.");
     } finally {
       setLoading(false);
     }
-  }
-  async function handleSave() {
+  };
+
+  const handleSave = async () => {
     if (!user || !plan) return;
-    await saveLessonPlan(user.id, plan);
-    alert("Plano salvo com sucesso!");
-  }
+    setSaving(true);
+    try {
+      await saveLessonPlan(user.id, plan);
+      alert("Plano salvo com sucesso!");
+    } catch (err) {
+      alert(`Nao foi possivel salvar: ${err instanceof Error ? err.message : "erro desconhecido"}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-semibold mb-4">Criar plano de aula</h1>
-      <div className="grid gap-3">
-        <input className="border rounded p-3" placeholder="Tema" value={topic} onChange={e=>setTopic(e.target.value)} />
-        <input className="border rounded p-3" placeholder="Série/Ano" value={grade} onChange={e=>setGrade(e.target.value)} />
-        <div className="flex gap-3">
-          <button onClick={handleGenerate} disabled={loading || topic.length<3}
-                  className="px-4 py-2 rounded bg-blue-600 text-white">
-            {loading? "Gerando..." : "Gerar com IA"}
-          </button>
-          {plan && <button onClick={handleSave} className="px-4 py-2 rounded bg-green-600 text-white">Salvar</button>}
+    <div className="min-h-screen bg-gray-50">
+      <div className="mx-auto w-full max-w-4xl px-4 py-10">
+        <header className="mb-8 space-y-2">
+          <p className="text-sm font-semibold text-blue-600">Planejamento</p>
+          <h1 className="text-3xl font-semibold text-gray-900">Criar plano de aula</h1>
+          <p className="text-sm text-gray-600">
+            Informe o tema e o ano escolar. A IA gera objetivos, materiais, sequencia e avaliacao alinhados a boas
+            praticas.
+          </p>
+        </header>
+
+        <div className="space-y-6">
+          <section className="rounded-2xl bg-white p-6 shadow">
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-gray-700">Tema da aula</span>
+                <input
+                  value={topic}
+                  onChange={(event) => setTopic(event.target.value)}
+                  placeholder="Ex.: Ciclo da agua"
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring focus:ring-blue-100"
+                />
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-gray-700">Serie/Ano</span>
+                <input
+                  value={grade}
+                  onChange={(event) => setGrade(event.target.value)}
+                  placeholder="Ex.: 6o ano"
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring focus:ring-blue-100"
+                />
+              </label>
+            </div>
+
+            <label className="mt-4 flex flex-col gap-2">
+              <span className="text-sm font-medium text-gray-700">Foco da aula (opcional)</span>
+              <textarea
+                value={focus}
+                onChange={(event) => setFocus(event.target.value)}
+                rows={4}
+                placeholder="Objetivos especificos, projetos em andamento, habilidades a reforcar..."
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring focus:ring-blue-100"
+              />
+            </label>
+
+            {error ? (
+              <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+            ) : null}
+
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={disabled}
+                className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "Gerando..." : "Gerar plano com IA"}
+              </button>
+            </div>
+          </section>
+
+          {plan ? (
+            <section className="space-y-5 rounded-2xl border border-gray-100 bg-white p-6 shadow">
+              <header>
+                <h2 className="text-2xl font-semibold text-gray-900">{plan.title}</h2>
+              </header>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-blue-600">Objetivos</h3>
+                  <ul className="space-y-1 text-sm text-gray-700">
+                    {plan.objectives.map((objective, index) => (
+                      <li key={index} className="rounded-lg bg-blue-50/60 px-4 py-2">
+                        {objective}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-blue-600">Materiais</h3>
+                  <ul className="space-y-1 text-sm text-gray-700">
+                    {plan.materials.map((material, index) => (
+                      <li key={index} className="rounded-lg bg-blue-50/60 px-4 py-2">
+                        {material}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-blue-600">Sequencia didatica</h3>
+                <ol className="space-y-3 text-sm text-gray-700">
+                  {plan.steps.map((step, index) => (
+                    <li key={index} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                      <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                        <p className="font-semibold text-gray-900">{step.title}</p>
+                        <span className="text-xs font-medium text-blue-600">{step.durationMinutes} min</span>
+                      </div>
+                      <p className="text-sm text-gray-600">{step.description}</p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-blue-600">Avaliacao</h3>
+                <ul className="space-y-1 text-sm text-gray-700">
+                  {plan.assessment.map((item, index) => (
+                    <li key={index} className="rounded-lg bg-blue-50/60 px-4 py-2">
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {saving ? "Salvando..." : "Salvar plano de aula"}
+                </button>
+              </div>
+            </section>
+          ) : null}
         </div>
       </div>
-
-      {plan && (
-        <div className="mt-6 border rounded p-4 bg-white">
-          <h2 className="text-xl font-medium">{plan.title}</h2>
-          <h3 className="font-semibold mt-3">Objetivos</h3>
-          <ul className="list-disc ml-6">{plan.objectives.map((o,i)=><li key={i}>{o}</li>)}</ul>
-          <h3 className="font-semibold mt-3">Materiais</h3>
-          <ul className="list-disc ml-6">{plan.materials.map((o,i)=><li key={i}>{o}</li>)}</ul>
-          <h3 className="font-semibold mt-3">Sequência didática</h3>
-          <ol className="list-decimal ml-6 space-y-1">
-            {plan.steps.map((s,i)=>(<li key={i}><b>{s.title}</b> — {s.description} ({s.durationMinutes} min)</li>))}
-          </ol>
-          <h3 className="font-semibold mt-3">Avaliação</h3>
-          <ul className="list-disc ml-6">{plan.assessment.map((o,i)=><li key={i}>{o}</li>)}</ul>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,37 +1,37 @@
-import { useEffect, useMemo, useState } from "react"
-import { Link } from "react-router-dom"
-import Header from "../components/Header"
-import PrototypeBanner from "../components/PrototypeBanner"
-import { BILLING_ENABLED, SHOW_PROTOTYPE_BANNER } from "../flags"
-import { auditEvent, useAuth } from "@/hooks/useAuth"
-import { getSupabase } from "@/services/supabaseClient"
-import { listMyAssessments } from "@/services/assessments"
-import { listMyLessonPlans } from "@/services/lessonPlans"
-import { listMySlideDecks } from "@/services/slides"
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import Header from "../components/Header";
+import PrototypeBanner from "../components/PrototypeBanner";
+import { BILLING_ENABLED, SHOW_PROTOTYPE_BANNER } from "../flags";
+import { auditEvent, useAuth } from "@/hooks/useAuth";
+import { getSupabase } from "@/services/supabaseClient";
+import { listMyAssessments } from "@/services/assessments";
+import { listMyLessonPlans } from "@/services/lessonPlans";
+import { listMySlideDecks } from "@/services/slides";
 
 type RecentEvent = {
-  id: string
-  event: string
-  created_at: string
-  meta?: Record<string, unknown> | null
-}
+  id: string;
+  event: string;
+  created_at: string;
+  meta?: Record<string, unknown> | null;
+};
 
 export default function Dashboard() {
-  const { user, profile, logout } = useAuth()
-  const supabase = useMemo(() => getSupabase(), [])
+  const { user, profile, logout } = useAuth();
+  const supabase = useMemo(() => getSupabase(), []);
 
-  const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([])
-  const [lastCreation, setLastCreation] = useState<{ label: string; href: string } | null>(null)
-  const [assessments, setAssessments] = useState<any[]>([])
-  const [plans, setPlans] = useState<any[]>([])
-  const [decks, setDecks] = useState<any[]>([])
-
-  useEffect(() => {
-    void auditEvent("dashboard_view")
-  }, [])
+  const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
+  const [lastCreation, setLastCreation] = useState<{ label: string; href: string } | null>(null);
+  const [assessments, setAssessments] = useState<any[]>([]);
+  const [plans, setPlans] = useState<any[]>([]);
+  const [decks, setDecks] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!user) return
+    void auditEvent("dashboard_view");
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
 
     const loadEvents = async () => {
       const { data, error } = await supabase
@@ -39,61 +39,62 @@ export default function Dashboard() {
         .select("id,event,created_at,meta")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(12)
+        .limit(12);
 
       if (error) {
-        console.warn("[Dashboard] Falha ao carregar eventos:", error)
-        return
+        console.warn("[Dashboard] erro ao buscar eventos:", error);
+        return;
       }
 
-      const events = (data as RecentEvent[]) ?? []
-      setRecentEvents(events)
+      const events = (data as RecentEvent[]) ?? [];
+      setRecentEvents(events);
 
       const last = events.find((evt) =>
-        ["assessment_created", "rubric_created", "slides_template_saved", "lesson_plan_template_saved", "adapted_assessment_template_saved"].includes(
-          evt.event
-        )
-      )
+        [
+          "assessment_created",
+          "rubric_created",
+          "slides_template_saved",
+          "lesson_plan_template_saved",
+          "adapted_assessment_template_saved",
+        ].includes(evt.event)
+      );
 
       if (!last) {
-        setLastCreation(null)
-        return
+        setLastCreation(null);
+        return;
       }
 
       const mapping: Record<string, { label: string; href: string }> = {
-        assessment_created: { label: "Avaliação", href: "/create/assessment" },
+        assessment_created: { label: "Avaliacao", href: "/avaliacoes/nova" },
         rubric_created: { label: "Rubrica", href: "/create/rubric" },
-        slides_template_saved: { label: "Slides", href: "/create/slides" },
-        lesson_plan_template_saved: { label: "Plano de aula", href: "/create/lesson-plan" },
-        adapted_assessment_template_saved: {
-          label: "Avaliação adaptada",
-          href: "/create/assessment/adapted",
-        },
-      }
+        slides_template_saved: { label: "Slides", href: "/slides/novo" },
+        lesson_plan_template_saved: { label: "Plano de aula", href: "/planos/nova" },
+        adapted_assessment_template_saved: { label: "Avaliacao adaptada", href: "/create/assessment/adapted" },
+      };
 
-      setLastCreation(mapping[last.event])
-    }
+      setLastCreation(mapping[last.event]);
+    };
 
-    void loadEvents()
-  }, [supabase, user])
+    void loadEvents();
+  }, [supabase, user]);
 
   useEffect(() => {
-    if (!user) return
-    ;(async () => {
+    if (!user) return;
+    (async () => {
       try {
-        const [a, p, d] = await Promise.all([
+        const [myAssessments, myPlans, myDecks] = await Promise.all([
           listMyAssessments(user.id),
           listMyLessonPlans(user.id),
           listMySlideDecks(user.id),
-        ])
-        setAssessments(a)
-        setPlans(p)
-        setDecks(d)
+        ]);
+        setAssessments(myAssessments);
+        setPlans(myPlans);
+        setDecks(myDecks);
       } catch (error) {
-        console.warn("[Dashboard] Falha ao carregar listas recentes:", error)
+        console.warn("[Dashboard] erro ao carregar listas recentes:", error);
       }
-    })()
-  }, [user])
+    })();
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -104,14 +105,14 @@ export default function Dashboard() {
         <header className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-medium text-blue-600">AvaliaPro</p>
-            <h1 className="text-3xl font-semibold text-gray-900">Modo protótipo liberado</h1>
+            <h1 className="text-3xl font-semibold text-gray-900">Bem-vindo ao painel</h1>
             <p className="text-sm text-gray-600">
-              Navegue por todos os recursos liberados. Nenhum bloqueio de assinatura ativo.
+              Crie avaliacoes, planos e slides com IA. Tudo fica salvo no Supabase para acompanhar depois.
             </p>
           </div>
           <div className="flex flex-col items-start gap-2 text-sm text-gray-600">
             <span>
-              Usuário logado: <strong>{user?.email ?? "visitante@avaliapro.com"}</strong>
+              Usuario logado: <strong>{user?.email ?? "visitante@avaliapro.com"}</strong>
             </span>
             {profile?.full_name ? <span>Nome: {profile.full_name}</span> : null}
             {user ? (
@@ -127,11 +128,11 @@ export default function Dashboard() {
 
         {BILLING_ENABLED ? (
           <section className="rounded-2xl border border-dashed border-blue-200 bg-blue-50 p-6 text-sm text-blue-700 shadow-inner">
-            Stripe desativado neste ambiente. Quando habilitarmos cobrança, um card com planos aparecerá aqui.
+            Stripe desativado neste ambiente. Quando ativarmos cobranca, os planos aparecem aqui.
           </section>
         ) : (
           <section className="rounded-2xl border border-blue-100 bg-white p-6 text-sm text-blue-700 shadow">
-            Protótipo aberto para testes — todo o conteúdo está liberado para exploração.
+            Modo completo liberado para testes. Use os fluxos e compartilhe feedback com o time.
           </section>
         )}
 
@@ -139,7 +140,7 @@ export default function Dashboard() {
           <section className="rounded-2xl border bg-white p-6 shadow">
             <h2 className="text-lg font-semibold text-gray-900">Continue de onde parou</h2>
             <p className="mt-2 text-sm text-gray-600">
-              Retome sua última criação e finalize os ajustes.
+              Retome o ultimo conteudo criado para finalizar ajustes ou compartilhar.
             </p>
             <Link
               to={lastCreation.href}
@@ -151,48 +152,30 @@ export default function Dashboard() {
         ) : null}
 
         <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">Atalhos rápidos</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Atalhos rapidos</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Link to="/avaliacoes/nova" className="block rounded-lg p-5 bg-white shadow hover:shadow-lg transition">
-              Criar avaliação
+            <Link to="/avaliacoes/nova" className="block rounded-lg bg-white p-5 text-sm font-semibold text-gray-800 shadow transition hover:shadow-lg">
+              Criar avaliacao
             </Link>
-            <Link to="/planos/nova" className="block rounded-lg p-5 bg-white shadow hover:shadow-lg transition">
+            <Link to="/planos/nova" className="block rounded-lg bg-white p-5 text-sm font-semibold text-gray-800 shadow transition hover:shadow-lg">
               Plano de aula
             </Link>
-            <Link to="/slides/novo" className="block rounded-lg p-5 bg-white shadow hover:shadow-lg transition">
+            <Link to="/slides/novo" className="block rounded-lg bg-white p-5 text-sm font-semibold text-gray-800 shadow transition hover:shadow-lg">
               Gerar slides
             </Link>
-            <Link to="/create/assessment/adapted" className="block rounded-lg p-5 bg-white shadow hover:shadow-lg transition">
-              Avaliação adaptada
+            <Link
+              to="/create/assessment/adapted"
+              className="block rounded-lg bg-white p-5 text-sm font-semibold text-gray-800 shadow transition hover:shadow-lg"
+            >
+              Avaliacao adaptada
             </Link>
           </div>
         </section>
 
-        <div className="mt-6 grid md:grid-cols-3 gap-4">
-          <div>
-            <h3 className="font-semibold mb-2">Minhas avaliações</h3>
-            <ul className="text-sm space-y-1">
-              {assessments.slice(0,3).map((a) => (
-                <li key={a.id}>{a.title}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-semibold mb-2">Planos de aula</h3>
-            <ul className="text-sm space-y-1">
-              {plans.slice(0,3).map((p) => (
-                <li key={p.id}>{p.title}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-semibold mb-2">Slides</h3>
-            <ul className="text-sm space-y-1">
-              {decks.slice(0,3).map((d) => (
-                <li key={d.id}>{d.title}</li>
-              ))}
-            </ul>
-          </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <CardList title="Minhas avaliacoes" emptyMessage="Sem avaliacoes recentes" items={assessments} />
+          <CardList title="Planos de aula" emptyMessage="Sem planos recentes" items={plans} />
+          <CardList title="Slides" emptyMessage="Sem decks recentes" items={decks} />
         </div>
 
         <section className="grid gap-4 md:grid-cols-[2fr,1fr]">
@@ -216,38 +199,65 @@ export default function Dashboard() {
               </ul>
             ) : (
               <p className="mt-4 text-sm text-gray-500">
-                Suas atividades recentes aparecerão aqui após gerar ou salvar conteúdos.
+                Gere ou salve conteudos para acompanhar o historico por aqui.
               </p>
             )}
           </div>
           <div className="rounded-2xl bg-white p-6 shadow">
-            <h3 className="text-lg font-semibold text-gray-900">Próximos passos</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Proximos passos</h3>
             <ul className="mt-3 space-y-2 text-sm text-gray-600">
-              <li>• Conectar IA para sugestões de questões.</li>
-              <li>• Permitir importação de planilhas com notas.</li>
-              <li>• Disponibilizar relatórios exportáveis em PDF.</li>
+              <li>- Conectar IA para sugestoes de questoes adaptadas.</li>
+              <li>- Importar planilhas de notas para cruzar com avaliacoes.</li>
+              <li>- Exportar relatorios em PDF com personalizacao.</li>
             </ul>
           </div>
         </section>
       </main>
     </div>
-  )
+  );
+}
+
+function CardList({
+  title,
+  emptyMessage,
+  items,
+}: {
+  title: string;
+  emptyMessage: string;
+  items: { id: string; title: string }[];
+}) {
+  return (
+    <div className="rounded-2xl bg-white p-6 shadow">
+      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      {items.length ? (
+        <ul className="mt-3 space-y-2 text-sm text-gray-700">
+          {items.slice(0, 3).map((item) => (
+            <li key={item.id} className="truncate">
+              {item.title}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-sm text-gray-500">{emptyMessage}</p>
+      )}
+    </div>
+  );
 }
 
 function formatEventName(event: string) {
   const mapping: Record<string, string> = {
-    assessment_structured_generated: "Avaliação estruturada gerada",
-    assessment_created: "Avaliação salva",
+    assessment_structured_generated: "Avaliacao estruturada gerada",
+    assessment_created: "Avaliacao salva",
     rubric_generated: "Rubrica gerada",
     rubric_created: "Rubrica salva",
     slides_outline_generated: "Slides gerados",
     slides_template_saved: "Slides salvos",
     lesson_plan_ai_generated: "Plano de aula gerado",
     lesson_plan_template_saved: "Plano de aula salvo",
-    adapted_assessment_ai_generated: "Avaliação adaptada gerada",
-    adapted_assessment_template_saved: "Avaliação adaptada salva",
-    tutor_answered: "Tutor IA consultado",
-    students_imported: "Importação de alunos",
-  }
-  return mapping[event] ?? event
+    adapted_assessment_ai_generated: "Avaliacao adaptada gerada",
+    adapted_assessment_template_saved: "Avaliacao adaptada salva",
+    tutor_answered: "Tutor IA respondido",
+    students_imported: "Alunos importados",
+  };
+  return mapping[event] ?? event;
 }

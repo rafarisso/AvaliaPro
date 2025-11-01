@@ -47,8 +47,7 @@ export async function callAI(fn: "generate-structured" | "generate-lesson-plan" 
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const msg = await res.text().catch(() => "");
-    throw new Error(`AI function error: ${res.status} ${msg}`);
+    throw new Error(`AI function error ${res.status}`);
   }
   return await res.json();
 }
