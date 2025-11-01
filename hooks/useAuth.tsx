@@ -113,16 +113,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     let mounted = true
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!mounted) return
+    supabase.auth
+      .getSession()
+      .then(async ({ data, error }) => {
+        if (!mounted) return
+        if (error) {
+          console.warn("[Auth] getSession error", error)
+        }
 
-      const nextSession = data.session ?? null
-      const nextUser = nextSession?.user ?? null
-      setSession(nextSession)
-      setUser(nextUser)
-      await loadProfile(nextUser)
-      if (mounted) setLoading(false)
-    })
+        const nextSession = data?.session ?? null
+        const nextUser = nextSession?.user ?? null
+        setSession(nextSession)
+        setUser(nextUser)
+        try {
+          await loadProfile(nextUser)
+        } catch (err) {
+          console.warn("[Auth] loadProfile (initial) falhou", err)
+        }
+        if (mounted) setLoading(false)
+      })
+      .catch((err) => {
+        console.warn("[Auth] getSession threw", err)
+        if (mounted) setLoading(false)
+      })
 
     const {
       data: { subscription },
@@ -132,7 +145,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const nextUser = nextSession?.user ?? null
       setSession(nextSession)
       setUser(nextUser)
-      await loadProfile(nextUser)
+      try {
+        await loadProfile(nextUser)
+      } catch (err) {
+        console.warn("[Auth] loadProfile (change) falhou", err)
+      }
       if (mounted) setLoading(false)
     })
 
