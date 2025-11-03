@@ -41,3 +41,7 @@ export const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON
 export function getSupabase(): SupabaseClient {
   return supabase
 }
+
+if (typeof window !== "undefined") {
+  ;(window as any).supabase = supabase
+}
