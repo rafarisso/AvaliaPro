@@ -1,26 +1,26 @@
-import { GoogleGenerativeAI, SchemaType } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
 const MODEL = "gemini-2.5-flash";
 
 const schema = {
-  type: SchemaType.OBJECT,
+  type: Type.OBJECT,
   properties: {
-    title: { type: SchemaType.STRING },
-    objectives: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-    materials: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+    title: { type: Type.STRING },
+    objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
+    materials: { type: Type.ARRAY, items: { type: Type.STRING } },
     steps: {
-      type: SchemaType.ARRAY,
+      type: Type.ARRAY,
       items: {
-        type: SchemaType.OBJECT,
+        type: Type.OBJECT,
         properties: {
-          title: { type: SchemaType.STRING },
-          description: { type: SchemaType.STRING },
-          durationMinutes: { type: SchemaType.NUMBER },
+          title: { type: Type.STRING },
+          description: { type: Type.STRING },
+          durationMinutes: { type: Type.NUMBER },
         },
         required: ["title", "description", "durationMinutes"],
       },
     },
-    assessment: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+    assessment: { type: Type.ARRAY, items: { type: Type.STRING } },
   },
   required: ["title", "objectives", "steps", "assessment"],
 };
@@ -28,17 +28,17 @@ const schema = {
 export const handler = async (event) => {
   try {
     const { topic, grade } = JSON.parse(event.body || "{}");
-    const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = ai.getGenerativeModel({
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+    const prompt = `Crie um plano de aula para ${grade} sobre "${topic}", alinhado a BNCC, com objetivos, materiais, sequencia didatica (com tempo) e formas de avaliacao. Responda somente JSON.`;
+    const response = await ai.models.generateContent({
       model: MODEL,
-      generationConfig: {
+      contents: prompt,
+      config: {
         responseMimeType: "application/json",
         responseSchema: schema,
       },
     });
-    const prompt = `Crie um plano de aula para ${grade} sobre "${topic}", alinhado a BNCC, com objetivos, materiais, sequencia didatica (com tempo) e formas de avaliacao. Responda somente JSON.`;
-    const r = await model.generateContent(prompt);
-    return { statusCode: 200, body: r.response.text() };
+    return { statusCode: 200, body: response.text ?? "" };
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ error: "generation_failed" }) };
   }

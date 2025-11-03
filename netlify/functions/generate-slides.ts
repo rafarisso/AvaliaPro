@@ -1,19 +1,19 @@
-import { GoogleGenerativeAI, SchemaType } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
 const MODEL = "gemini-2.5-flash";
 
 const schema = {
-  type: SchemaType.OBJECT,
+  type: Type.OBJECT,
   properties: {
-    title: { type: SchemaType.STRING },
+    title: { type: Type.STRING },
     slides: {
-      type: SchemaType.ARRAY,
+      type: Type.ARRAY,
       items: {
-        type: SchemaType.OBJECT,
+        type: Type.OBJECT,
         properties: {
-          heading: { type: SchemaType.STRING },
-          bullets: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-          imagePrompt: { type: SchemaType.STRING },
+          heading: { type: Type.STRING },
+          bullets: { type: Type.ARRAY, items: { type: Type.STRING } },
+          imagePrompt: { type: Type.STRING },
         },
         required: ["heading", "bullets"],
       },
@@ -25,17 +25,17 @@ const schema = {
 export const handler = async (event) => {
   try {
     const { topic, grade } = JSON.parse(event.body || "{}");
-    const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = ai.getGenerativeModel({
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+    const prompt = `Gere um deck de slides didatico para ${grade} sobre "${topic}". Cada slide deve ter titulo e bullets objetivos; inclua "imagePrompt" opcional. JSON puro.`;
+    const response = await ai.models.generateContent({
       model: MODEL,
-      generationConfig: {
+      contents: prompt,
+      config: {
         responseMimeType: "application/json",
         responseSchema: schema,
       },
     });
-    const prompt = `Gere um deck de slides didatico para ${grade} sobre "${topic}". Cada slide deve ter titulo e bullets objetivos; inclua "imagePrompt" opcional. JSON puro.`;
-    const r = await model.generateContent(prompt);
-    return { statusCode: 200, body: r.response.text() };
+    return { statusCode: 200, body: response.text ?? "" };
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ error: "generation_failed" }) };
   }

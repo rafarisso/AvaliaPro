@@ -1,22 +1,22 @@
-import { GoogleGenerativeAI, SchemaType } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
 const MODEL = "gemini-2.5-flash";
 
 const assessmentSchema = {
-  type: SchemaType.OBJECT,
+  type: Type.OBJECT,
   properties: {
-    assessmentTitle: { type: SchemaType.STRING },
+    assessmentTitle: { type: Type.STRING },
     questions: {
-      type: SchemaType.ARRAY,
+      type: Type.ARRAY,
       items: {
-        type: SchemaType.OBJECT,
+        type: Type.OBJECT,
         properties: {
-          questionNumber: { type: SchemaType.NUMBER },
-          questionType: { type: SchemaType.STRING },
-          questionText: { type: SchemaType.STRING },
-          points: { type: SchemaType.NUMBER },
-          options: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-          correctAnswer: { type: SchemaType.STRING },
+          questionNumber: { type: Type.NUMBER },
+          questionType: { type: Type.STRING },
+          questionText: { type: Type.STRING },
+          points: { type: Type.NUMBER },
+          options: { type: Type.ARRAY, items: { type: Type.STRING } },
+          correctAnswer: { type: Type.STRING },
         },
         required: ["questionNumber", "questionType", "questionText", "points"],
       },
@@ -29,17 +29,17 @@ export const handler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
     const { topic, grade, discipline, numQuestions, level } = body;
-    const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = ai.getGenerativeModel({
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+    const prompt = `Gere uma avaliacao de ${discipline} para ${grade} sobre "${topic}" com ${numQuestions} questoes nivel ${level}, linguagem da educacao basica brasileira.`;
+    const response = await ai.models.generateContent({
       model: MODEL,
-      generationConfig: {
+      contents: prompt,
+      config: {
         responseMimeType: "application/json",
         responseSchema: assessmentSchema,
       },
     });
-    const prompt = `Gere uma avaliacao de ${discipline} para ${grade} sobre "${topic}" com ${numQuestions} questoes nivel ${level}, linguagem da educacao basica brasileira.`;
-    const r = await model.generateContent(prompt);
-    return { statusCode: 200, body: r.response.text() };
+    return { statusCode: 200, body: response.text ?? "" };
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ error: "generation_failed" }) };
   }
