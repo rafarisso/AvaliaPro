@@ -29,14 +29,6 @@ function AppRoutes() {
 
   const needsOnboarding = !!user && !profile?.onboarding_completed
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-600">
-        Carregando...
-      </div>
-    )
-  }
-
   return (
     <Routes>
       <Route

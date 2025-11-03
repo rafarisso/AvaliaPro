@@ -4,7 +4,8 @@ import { z } from "zod";
 import { completeOnboarding, type OnboardingInput, getMyProfile } from "@/services/profile";
 import { useAuth } from "@/hooks/useAuth";
 
-const SHIFT_OPTIONS = ["manhã", "tarde", "noite"] as const;
+const SHIFT_OPTIONS = ["manh\u00e3", "tarde", "noite"] as const;
+const DEFAULT_SHIFT = SHIFT_OPTIONS[0];
 
 const schema = z.object({
   full_name: z.string().min(3, "Informe seu nome completo."),
@@ -64,7 +65,7 @@ export default function OnboardingWizard() {
     full_name: "",
     grade_levels: [],
     subjects: [],
-    schools: [{ name: "", city: "", state: "", shifts: ["manhã"] }],
+    schools: [{ name: "", city: "", state: "", shifts: [DEFAULT_SHIFT] }],
   });
 
   useEffect(() => {
@@ -170,7 +171,7 @@ export default function OnboardingWizard() {
         <label className="text-sm font-medium text-gray-700">Seu nome completo</label>
         <input
           className="rounded-xl border border-gray-200 p-3 text-sm outline-none transition focus:border-blue-500 focus:ring focus:ring-blue-100"
-          placeholder="Ex.: Rafael de Toledo Risso"
+          placeholder="Ex.: João da Silva"
           value={input.full_name}
           onChange={(event) => setInput((prev) => ({ ...prev, full_name: event.target.value }))}
         />
@@ -283,7 +284,7 @@ export default function OnboardingWizard() {
             onClick={() =>
               setInput((prev) => ({
                 ...prev,
-                schools: [...prev.schools, { name: "", city: "", state: "", shifts: ["manhã"] }],
+                schools: [...prev.schools, { name: "", city: "", state: "", shifts: [DEFAULT_SHIFT] }],
               }))
             }
           >
@@ -310,7 +311,7 @@ export default function OnboardingWizard() {
     setInput((prev) => {
       const next = [...prev.schools];
       const current = next[index];
-      const currentShifts = current.shifts ?? [];
+      const currentShifts = Array.isArray(current.shifts) && current.shifts.length ? [...current.shifts] : [DEFAULT_SHIFT];
       const alreadySelected = currentShifts.includes(shift);
       if (alreadySelected && currentShifts.length === 1) {
         return prev;
