@@ -123,7 +123,11 @@ export default function AssessmentCreator() {
     if (!user || !generated) return;
     setSaving(true);
     try {
-      const id = await saveAssessment(user.id, generated);
+      const id = await saveAssessment(user.id, generated, {
+        discipline: form.discipline,
+        topic: form.topic,
+        grade: form.grade,
+      });
       alert("Avaliacao salva com sucesso!");
       navigate(`/avaliacoes/${id}`);
     } catch (err) {

@@ -14,41 +14,70 @@ export type GeneratedAssessment = {
   questions: GeneratedQuestion[];
 };
 
-export async function saveAssessment(userId: string, data: GeneratedAssessment) {
+type AssessmentContext = {
+  discipline?: string;
+  topic?: string;
+  grade?: string;
+};
+
+export async function saveAssessment(
+  userId: string,
+  data: GeneratedAssessment,
+  context: AssessmentContext = {}
+) {
   const supabase = getSupabase();
-  const { data: a, error } = await supabase
+  const { data: assessment, error } = await supabase
     .from("assessments")
-    .insert({ user_id: userId, title: data.assessmentTitle })
-    .select()
+    .insert({
+      user_id: userId,
+      titulo: data.assessmentTitle,
+      disciplina: context.discipline ?? null,
+      tema: context.topic ?? null,
+      serie: context.grade ?? null,
+    })
+    .select("id")
     .single();
   if (error) throw error;
 
-  const items = data.questions.map((q) => ({
-    assessment_id: a.id,
-    number: q.questionNumber,
-    type: q.questionType,
-    text: q.questionText,
-    points: q.points,
-    options: q.options ?? null
+  const items = data.questions.map((question, index) => ({
+    assessment_id: assessment.id,
+    idx: index,
+    json: {
+      numero: question.questionNumber,
+      tipo: question.questionType,
+      enunciado: question.questionText,
+      pontos: question.points,
+      alternativas: question.options ?? null,
+      resposta: question.correctAnswer ?? null,
+    },
+    user_id: userId,
   }));
-  const { error: e2 } = await supabase.from("assessment_items").insert(items);
-  if (e2) throw e2;
+  if (items.length) {
+    const { error: e2 } = await supabase.from("assessment_items").insert(items);
+    if (e2) throw e2;
+  }
 
-  const keys = data.questions
-    .filter((q) => q.correctAnswer)
-    .map((q) => ({ assessment_id: a.id, number: q.questionNumber, correct: q.correctAnswer! }));
-  if (keys.length) {
-    const { error: e3 } = await supabase.from("assessment_keys").insert(keys);
+  const answerKey = data.questions.reduce<Record<string, string>>((acc, question) => {
+    if (question.correctAnswer) {
+      acc[String(question.questionNumber)] = question.correctAnswer;
+    }
+    return acc;
+  }, {});
+
+  if (Object.keys(answerKey).length) {
+    const { error: e3 } = await supabase
+      .from("assessment_keys")
+      .insert({ assessment_id: assessment.id, key: answerKey, user_id: userId });
     if (e3) throw e3;
   }
-  return a.id as string;
+  return assessment.id as string;
 }
 
 export async function listMyAssessments(userId: string) {
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from("assessments")
-    .select("id,title,created_at")
+    .select("id,titulo,disciplina,tema,serie,created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -57,22 +86,22 @@ export async function listMyAssessments(userId: string) {
 
 export async function getAssessment(id: string) {
   const supabase = getSupabase();
-  const { data: a, error } = await supabase
+  const { data: assessment, error } = await supabase
     .from("assessments")
-    .select("id,title,created_at")
+    .select("id,titulo,disciplina,tema,serie,created_at")
     .eq("id", id)
     .single();
   if (error) throw error;
 
   const { data: items } = await supabase
     .from("assessment_items")
-    .select("number,type,text,points,options")
+    .select("idx,json")
     .eq("assessment_id", id)
-    .order("number");
+    .order("idx");
   const { data: keys } = await supabase
     .from("assessment_keys")
-    .select("number,correct")
+    .select("key")
     .eq("assessment_id", id);
 
-  return { a, items: items ?? [], keys: keys ?? [] };
+  return { assessment, items: items ?? [], keys: keys ?? [] };
 }

@@ -7,32 +7,26 @@ export type GeneratedSlideDeck = {
 
 export async function saveSlideDeck(userId: string, data: GeneratedSlideDeck) {
   const supabase = getSupabase();
-  const { data: sd, error } = await supabase
-    .from("slide_decks")
-    .insert({ user_id: userId, title: data.title })
-    .select()
+  const { data: template, error } = await supabase
+    .from("templates")
+    .insert({
+      user_id: userId,
+      titulo: data.title,
+      corpo: { type: "slides_outline", slides: data.slides },
+    })
+    .select("id")
     .single();
   if (error) throw error;
-
-  const slides = data.slides.map((s, idx) => ({
-    slide_deck_id: sd.id,
-    number: idx + 1,
-    heading: s.heading,
-    bullets: s.bullets,
-    image_prompt: s.imagePrompt ?? null
-  }));
-  const { error: e2 } = await supabase.from("slides").insert(slides);
-  if (e2) throw e2;
-
-  return sd.id as string;
+  return template.id as string;
 }
 
 export async function listMySlideDecks(userId: string) {
   const supabase = getSupabase();
   const { data, error } = await supabase
-    .from("slide_decks")
-    .select("id,title,created_at")
+    .from("templates")
+    .select("id,titulo,corpo,created_at")
     .eq("user_id", userId)
+    .contains("corpo", { type: "slides_outline" })
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data ?? [];

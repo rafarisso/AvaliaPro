@@ -59,6 +59,12 @@ do $$ begin
     create policy "own profile" on profiles
       for select using (id = auth.uid())
       with check (id = auth.uid());
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='profiles' and policyname='own profile insert') then
+    create policy "own profile insert" on profiles
+      for insert with check (id = auth.uid());
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='profiles' and policyname='own profile update') then
     create policy "own profile update" on profiles
       for update using (id = auth.uid())
       with check (id = auth.uid());
