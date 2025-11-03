@@ -1,3 +1,4 @@
+import type { Handler } from "@netlify/functions";
 import { GoogleGenAI, Type } from "@google/genai";
 
 const MODEL = "gemini-2.5-flash";
@@ -23,24 +24,39 @@ const assessmentSchema = {
     },
   },
   required: ["assessmentTitle", "questions"],
-};
+} as const;
 
-export const handler = async (event) => {
+export const handler: Handler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
     const { topic, grade, discipline, numQuestions, level } = body;
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-    const prompt = `Gere uma avaliacao de ${discipline} para ${grade} sobre "${topic}" com ${numQuestions} questoes nivel ${level}, linguagem da educacao basica brasileira.`;
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return { statusCode: 500, body: JSON.stringify({ error: "missing_api_key" }) };
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const prompt = `Gere uma avaliacao de ${discipline ?? ""} para ${grade ?? ""} sobre "${topic ?? ""}" com ${numQuestions ?? ""} questoes nivel ${level ?? ""}, linguagem da educacao basica brasileira.`;
     const response = await ai.models.generateContent({
       model: MODEL,
-      contents: prompt,
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: prompt }],
+        },
+      ],
       config: {
         responseMimeType: "application/json",
         responseSchema: assessmentSchema,
       },
     });
+
     return { statusCode: 200, body: response.text ?? "" };
-  } catch (e) {
-    return { statusCode: 500, body: JSON.stringify({ error: "generation_failed" }) };
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "generation_failed" }),
+    };
   }
 };
