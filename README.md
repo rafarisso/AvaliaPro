@@ -1,20 +1,55 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🧠 AvaliaPro
 
-# Run and deploy your AI Studio app
+**AvaliaPro** é uma plataforma web voltada a professores e escolas, que automatiza a criação, organização e análise de **avaliações, planos de aula e relatórios pedagógicos**.  
+O sistema utiliza **Inteligência Artificial** para gerar conteúdos educativos, rubricas, slides e avaliações adaptadas, otimizando o tempo do educador.
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/drive/17tUN1PrWDIpKCggu6ARB_epJy5qR86SH
+## 🚀 Tecnologias
 
-## Run Locally
+- **Frontend:** [Vite](https://vitejs.dev/) + [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- **Estilo:** [TailwindCSS](https://tailwindcss.com/)
+- **Backend:** [Supabase](https://supabase.com/) (PostgreSQL + Auth + RLS)
+- **Deploy:** [Netlify](https://www.netlify.com/)
+- **Integrações futuras:** [Stripe](https://stripe.com/br) para assinatura mensal e IA via [Google Gemini](https://aistudio.google.com/)
 
-**Prerequisites:**  Node.js
+---
+
+## 🧰 Estrutura de Pastas
+
+AvaliaPro/
+├── public/
+│ ├── AvaliaPro_logo.svg
+│ ├── env.js # contém VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
+│ └── _redirects # SPA redirect Netlify
+├── src/
+│ ├── pages/ # LandingPage, Dashboard, Login, Register, etc.
+│ ├── hooks/ # useAuth, useAI, useSupabase
+│ ├── services/ # ai.ts, supabaseClient.ts
+│ ├── components/ # componentes reutilizáveis
+│ └── types/ # definições TypeScript (Assessment, User, Rubric, etc.)
+├── index.html
+├── package.json
+└── vite.config.ts
 
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+---
+
+## 🧩 Principais Tabelas no Supabase
+
+| Tabela | Função |
+|--------|--------|
+| **users** | Usuários autenticados (professores) |
+| **profiles** | Dados do usuário (nome, escola, disciplinas) |
+| **assessments** | Avaliações criadas |
+| **assessment_items** | Questões de cada avaliação |
+| **assessment_keys** | Gabaritos automáticos |
+| **rubrics** | Rubricas de avaliação |
+| **students** | Lista de alunos importados |
+| **lesson_plans** | Planos de aula gerados |
+| **reports** | Relatórios pedagógicos |
+| **notifications_queue** | Mensagens do sistema |
+| **app_settings** | Configurações do app |
+| **audit_logs** | Logs e auditorias automáticas |
+| **metrics_dau** | Métricas de uso diário (Daily Active Users) |
+| **next_best_action** | Sugestões automáticas de ação do sistema |
