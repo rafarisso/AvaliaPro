@@ -20,14 +20,14 @@ const quickActions = [
     title: "Criar avaliação",
     description: "Monte em minutos",
     icon: ClipboardList,
-    route: "/avaliacoes/nova",
+    route: "/create/assessment",
     accent: "from-blue-500/20 via-blue-500/10 to-transparent text-blue-600",
   },
   {
     title: "Plano de aula",
     description: "Organize e compartilhe",
     icon: NotebookPen,
-    route: "/plano-aula/novo",
+    route: "/create/lesson-plan",
     accent: "from-emerald-500/20 via-emerald-500/10 to-transparent text-emerald-600",
   },
   {
