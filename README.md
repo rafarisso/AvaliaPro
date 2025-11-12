@@ -18,19 +18,33 @@ O sistema utiliza **Inteligência Artificial** para gerar conteúdos educativos,
 ## 🧰 Estrutura de Pastas
 
 AvaliaPro/
+
 ├── public/
+
 │ ├── AvaliaPro_logo.svg
+
 │ ├── env.js # contém VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
+
 │ └── _redirects # SPA redirect Netlify
+
 ├── src/
+
 │ ├── pages/ # LandingPage, Dashboard, Login, Register, etc.
+
 │ ├── hooks/ # useAuth, useAI, useSupabase
+
 │ ├── services/ # ai.ts, supabaseClient.ts
+
 │ ├── components/ # componentes reutilizáveis
+
 │ └── types/ # definições TypeScript (Assessment, User, Rubric, etc.)
+
 ├── index.html
+
 ├── package.json
+
 └── vite.config.ts
+
 
 
 ---
