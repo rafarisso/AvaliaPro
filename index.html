@@ -5,23 +5,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#3366FF" />
-
     <title>AvaliaPro</title>
-    <meta
-      name="description"
-      content="AvaliaPro é a plataforma para professores criarem avaliações com apoio de Inteligência Artificial, salvando provas e atividades no próprio painel."
-    />
 
-    <!-- Open Graph (compartilhamento em redes sociais) -->
-    <meta property="og:title" content="AvaliaPro" />
-    <meta
-      property="og:description"
-      content="Crie avaliações em minutos com IA e organize suas provas em um só lugar."
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:locale" content="pt_BR" />
-
-    <!-- Fonte: Poppins -->
+    <!-- Fonte -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -29,13 +15,11 @@
       rel="stylesheet"
     />
 
-    <!-- CSS principal gerado pelo Vite -->
+    <!-- CSS -->
     <link rel="stylesheet" href="/index.css" />
-
-    <!-- Favicon -->
     <link rel="icon" href="/AvaliaPro_logo.svg" />
 
-    <!-- Tailwind via CDN (ok para protótipo; depois podemos migrar para build) -->
+    <!-- Tailwind via CDN (ok em protótipo, só gera warning no console) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -51,10 +35,10 @@
             },
           },
         },
-      };
+      }
     </script>
 
-    <!-- Estilos utilitários adicionais -->
+    <!-- Estilos adicionais -->
     <style type="text/tailwindcss">
       body {
         @apply bg-light text-gray-800 transition-colors duration-300;
@@ -81,15 +65,13 @@
         @apply bg-gray-900 text-gray-200;
       }
     </style>
+
+    <!-- env.js ANTES do bundle -->
+    <script src="/env.js"></script>
   </head>
 
   <body class="font-sans">
     <div id="root"></div>
-
-    <!-- Variáveis de ambiente em runtime (Supabase, Gemini, etc.) -->
-    <script src="/env.js"></script>
-
-    <!-- Entrada principal do app (mantida exatamente como estava) -->
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
