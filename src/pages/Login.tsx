@@ -1,14 +1,14 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../hooks/useAuth'
-import { useToast } from '../../hooks/useToast'
+ï»¿import React, { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { useAuth } from "../../hooks/useAuth"
+import { useToast } from "../../hooks/useToast"
 
 export default function Login() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const { loginWithPassword, loginWithOAuth } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
 
   const onSubmit = async (event: React.FormEvent) => {
@@ -16,13 +16,13 @@ export default function Login() {
     setLoading(true)
     try {
       await loginWithPassword(email, password)
-      showToast('Login realizado!', 'success')
-      navigate('/dashboard')
+      showToast("Login realizado!", "success")
+      navigate("/dashboard")
     } catch (error: any) {
-      console.error('[Auth]', error?.message ?? error)
+      console.error("[Auth]", error?.message ?? error)
       showToast(
-        'Falha ao autenticar. Verifique se o domínio está permitido nas URLs do Supabase e se as chaves estão corretas (env.js).',
-        'error'
+        "Falha ao autenticar. Verifique se o domÃ­nio estÃ¡ permitido nas URLs do Supabase e se as chaves estÃ£o corretas (env.js).",
+        "error"
       )
     } finally {
       setLoading(false)
@@ -31,12 +31,12 @@ export default function Login() {
 
   const loginWithGoogle = async () => {
     try {
-      await loginWithOAuth('google')
+      await loginWithOAuth("google")
     } catch (error: any) {
-      console.error('[Auth]', error?.message ?? error)
+      console.error("[Auth]", error?.message ?? error)
       showToast(
-        'Falha ao autenticar. Verifique se o domínio está permitido nas URLs do Supabase e se as chaves estão corretas (env.js).',
-        'error'
+        "Falha ao autenticar. Verifique se o domÃ­nio estÃ¡ permitido nas URLs do Supabase e se as chaves estÃ£o corretas (env.js).",
+        "error"
       )
     }
   }
@@ -47,14 +47,19 @@ export default function Login() {
         onSubmit={onSubmit}
         className="w-full max-w-md rounded-2xl border bg-white shadow-sm p-8 space-y-6"
       >
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-3">
+          <div className="flex justify-center">
+            <img src="/AvaliaPro_logo.svg" alt="AvaliaPro" className="h-14 w-auto" />
+          </div>
           <h2 className="text-2xl font-semibold">Entre na sua conta</h2>
           <p className="text-sm text-gray-600">Use seu e-mail corporativo para acessar o AvaliaPro.</p>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700" htmlFor="email">E-mail</label>
+            <label className="text-sm font-medium text-gray-700" htmlFor="email">
+              E-mail
+            </label>
             <input
               id="email"
               type="email"
@@ -67,7 +72,9 @@ export default function Login() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700" htmlFor="password">Senha</label>
+            <label className="text-sm font-medium text-gray-700" htmlFor="password">
+              Senha
+            </label>
             <input
               id="password"
               type="password"
@@ -75,7 +82,7 @@ export default function Login() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="••••••••"
+              placeholder="********"
             />
           </div>
         </div>
@@ -85,7 +92,7 @@ export default function Login() {
           disabled={loading}
           className="w-full rounded-xl bg-primary text-white py-3 font-medium hover:bg-primary-dark transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {loading ? 'Entrando…' : 'Entrar'}
+          {loading ? "Entrando." : "Entrar"}
         </button>
 
         <div className="flex items-center gap-3">

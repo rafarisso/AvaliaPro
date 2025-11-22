@@ -1,7 +1,6 @@
-import { useEffect } from "react"
+﻿import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import Header from "../components/Header"
-import PrototypeBanner from "../components/PrototypeBanner"
 import { useAuth } from "../../hooks/useAuth"
 import { getSupabase } from "../services/supabaseClient"
 
@@ -26,17 +25,19 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PrototypeBanner />
       <Header />
 
       <main className="mx-auto max-w-5xl space-y-8 px-4 py-8">
         <header className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm font-medium text-blue-600">AvaliaPro</p>
-            <h1 className="text-3xl font-semibold text-gray-900">Seu painel de protótipo</h1>
-            <p className="text-sm text-gray-600">
-              Explore recursos, colete feedback dos professores e veja onde podemos melhorar.
-            </p>
+          <div className="flex items-center gap-3">
+            <img src="/AvaliaPro_logo.svg" alt="AvaliaPro" className="h-12 w-auto" />
+            <div>
+              <p className="text-sm font-medium text-blue-600">AvaliaPro</p>
+              <h1 className="text-3xl font-semibold text-gray-900">Painel principal</h1>
+              <p className="text-sm text-gray-600">
+                Acompanhe e crie avaliações, planos e relatórios em um só lugar.
+              </p>
+            </div>
           </div>
           <div className="flex flex-col items-start gap-2 text-sm text-gray-600">
             <span>
@@ -84,25 +85,6 @@ export default function Dashboard() {
               <div className="text-lg font-medium text-gray-900">Relatórios</div>
               <div className="text-sm text-gray-500">acompanhamento rápido</div>
             </button>
-          </div>
-        </section>
-
-        <section className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl bg-white p-6 shadow">
-            <h3 className="text-lg font-semibold text-gray-900">Feedback em destaque</h3>
-            <ul className="mt-3 space-y-2 text-sm text-gray-600">
-              <li>• Professores querem mais modelos por disciplina.</li>
-              <li>• Geração automática de avaliações teve ótima aceitação.</li>
-              <li>• Relatórios simplificados ajudam na reunião pedagógica.</li>
-            </ul>
-          </div>
-          <div className="rounded-2xl bg-white p-6 shadow">
-            <h3 className="text-lg font-semibold text-gray-900">Próximos passos</h3>
-            <ul className="mt-3 space-y-2 text-sm text-gray-600">
-              <li>• Conectar IA para sugestões de questões.</li>
-              <li>• Permitir importação de planilhas com notas.</li>
-              <li>• Disponibilizar relatórios exportáveis em PDF.</li>
-            </ul>
           </div>
         </section>
       </main>

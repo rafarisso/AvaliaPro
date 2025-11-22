@@ -44,17 +44,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const supabase = getSupabase()
     let mounted = true
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return
-      const nextSession = data.session ?? null
-      const nextUser = nextSession?.user ?? null
-      setSession(nextSession)
-      setUser(nextUser)
-      void auditAccess(nextUser)
-      setLoading(false)
-    })
+    const fetchSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (!mounted) return
+        const nextSession = data.session ?? null
+        const nextUser = nextSession?.user ?? null
+        setSession(nextSession)
+        setUser(nextUser)
+        void auditAccess(nextUser)
+      } catch (error) {
+        console.error("[Auth] Falha ao recuperar sessão", error)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    void fetchSession()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!mounted) return
       const nextSession = newSession ?? null
       const nextUser = nextSession?.user ?? null
@@ -66,7 +74,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     return () => {
       mounted = false
-      subscription.unsubscribe()
+      authListener?.subscription?.unsubscribe?.()
     }
   }, [auditAccess])
 
