@@ -15,86 +15,123 @@ export type AssessmentForPdf = {
 }
 
 /**
- * Gera um PDF com cabeçalho da avaliação e lista de questões.
- * Objetivas recebem alternativas; discursivas mostram 5 linhas em branco para resposta.
+ * Gera um PDF profissional, sem data e sem marca d’água.
+ * Layout limpo, cabeçalho elegante e espaçamento adequado.
  */
 export function exportAssessmentToPdf(data: AssessmentForPdf) {
   if (!data.questoes.length) {
     throw new Error("Sem questões para exportar.")
   }
 
-  const doc = new jsPDF()
-  const marginLeft = 14
-  let cursorY = 20
-
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(14)
-  doc.text(data.titulo || "Avaliação", marginLeft, cursorY)
-  cursorY += 8
-
-  doc.setFontSize(10)
-  doc.setFont("helvetica", "normal")
-  const hoje = new Date().toLocaleDateString()
-  const headerLines = [
-    `Disciplina: ${data.disciplina}`,
-    `Nível: ${data.nivel}`,
-    `Série/Ano: ${data.serie || "Não informado"}`,
-    `Tipo: ${data.tipo}`,
-    `Data de geração: ${hoje}`,
-  ]
-  headerLines.forEach((line) => {
-    doc.text(line, marginLeft, cursorY)
-    cursorY += 6
+  const doc = new jsPDF({
+    unit: "pt",
+    format: "a4",
   })
 
-  cursorY += 4
-  doc.setDrawColor(200, 200, 200)
-  doc.line(marginLeft, cursorY, 200, cursorY)
-  cursorY += 10
+  const marginLeft = 40
+  let cursorY = 50
 
-  doc.setFontSize(11)
+  // ------------------------------
+  // TÍTULO
+  // ------------------------------
   doc.setFont("helvetica", "bold")
+  doc.setFontSize(18)
+  doc.text(data.titulo || "Avaliação", marginLeft, cursorY)
+  cursorY += 28
+
+  // ------------------------------
+  // CABEÇALHO ORGANIZADO EM BLOCO
+  // ------------------------------
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(11)
+
+  const headerLeft = [
+    `Disciplina: ${data.disciplina}`,
+    `Série/Ano: ${data.serie}`,
+  ]
+
+  const headerRight = [
+    `Nível: ${data.nivel}`,
+    `Tipo: ${data.tipo}`,
+  ]
+
+  const rightX = 320
+
+  headerLeft.forEach((line, index) => {
+    doc.text(line, marginLeft, cursorY + index * 14)
+  })
+
+  headerRight.forEach((line, index) => {
+    doc.text(line, rightX, cursorY + index * 14)
+  })
+
+  cursorY += 40
+
+  // Linha divisória
+  doc.setDrawColor(180)
+  doc.line(marginLeft, cursorY, 555, cursorY)
+  cursorY += 25
+
+  // ------------------------------
+  // TÍTULO DAS QUESTÕES
+  // ------------------------------
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(14)
   doc.text("Questões", marginLeft, cursorY)
-  cursorY += 8
+  cursorY += 24
 
   doc.setFont("helvetica", "normal")
+  doc.setFontSize(12)
+
+  // ------------------------------
+  // RENDERIZAÇÃO DAS QUESTÕES
+  // ------------------------------
   data.questoes.forEach((q, idx) => {
-    if (cursorY > 270) {
+    if (cursorY > 760) {
       doc.addPage()
-      cursorY = 20
+      cursorY = 50
     }
-    const enunciado = `${idx + 1}. ${q.enunciado} (${q.valor} ponto${q.valor !== 1 ? "s" : ""})`
-    doc.text(enunciado, marginLeft, cursorY)
-    cursorY += 6
+
+    const enunciado = `${idx + 1}. ${q.enunciado}  (${q.valor} ponto${q.valor !== 1 ? "s" : ""})`
+    const splitEnunciado = doc.splitTextToSize(enunciado, 520)
+
+    doc.text(splitEnunciado, marginLeft, cursorY)
+    cursorY += splitEnunciado.length * 16 + 8
 
     if (q.tipo === "objetiva") {
-      const alternativas = q.alternativas && q.alternativas.length ? q.alternativas : ["A)", "B)", "C)", "D)"]
+      // múltipla escolha
+      const alternativas = q.alternativas?.length
+        ? q.alternativas
+        : ["A)", "B)", "C)", "D)"]
+
       alternativas.forEach((alt, altIdx) => {
-        if (cursorY > 280) {
+        if (cursorY > 760) {
           doc.addPage()
-          cursorY = 20
+          cursorY = 50
         }
+
         const letra = String.fromCharCode(65 + altIdx)
-        doc.text(`${letra}) ${alt || ""}`, marginLeft + 4, cursorY)
-        cursorY += 6
+        doc.text(`${letra}) ${alt}`, marginLeft + 20, cursorY)
+        cursorY += 16
       })
     } else {
-      for (let i = 0; i < 5; i++) {
-        if (cursorY > 280) {
+      // discursiva — linhas de resposta
+      const linhas = 6
+      for (let i = 0; i < linhas; i++) {
+        if (cursorY > 760) {
           doc.addPage()
-          cursorY = 20
+          cursorY = 50
         }
-        doc.text("______________________________________________", marginLeft + 4, cursorY)
-        cursorY += 6
+        doc.line(marginLeft + 10, cursorY, 545, cursorY)
+        cursorY += 22
       }
     }
 
-    cursorY += 4
+    cursorY += 18
   })
 
-  doc.setFontSize(9)
-  doc.setTextColor(120)
-  doc.text("Gerado pelo AvaliaPro", marginLeft, 290)
-
+  // ------------------------------
+  // SALVAR ARQUIVO
+  // ------------------------------
   doc.save(`${data.titulo || "avaliacao"}.pdf`)
 }
