@@ -92,8 +92,10 @@ export default function ModelosPage() {
         const slide = pptx.addSlide()
         slide.addText(s.titulo || `Slide ${idx + 1}`, { x: 0.5, y: 0.4, fontSize: 24, bold: true, color: "203864" })
         const bulletY = 1.3
-        const bullets = (s.topicos?.length ? s.topicos : [""]).map((t) => `• ${t}`)
-        slide.addText(bullets, { x: 0.7, y: bulletY, fontSize: 16, lineSpacing: 24, color: "1f1f1f" })
+        const bullets = (s.topicos?.length ? s.topicos : [""])
+          .map((t) => `• ${t}`)
+          .join("\n")
+        slide.addText(bullets, { x: 0.7, y: bulletY, fontSize: 16, lineSpacing: 24, color: "1f1f1f", bullet: true })
         if (s.nota) {
           slide.addText(`Nota: ${s.nota}`, { x: 0.7, y: 4.5, fontSize: 12, color: "6b7280", italic: true })
         }

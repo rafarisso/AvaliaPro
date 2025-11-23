@@ -30,7 +30,7 @@ export default function Dashboard() {
       <main className="mx-auto max-w-5xl space-y-8 px-4 py-8">
         <header className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
-            <img src="/AvaliaPro_logo.svg" alt="AvaliaPro" className="h-16 w-auto" />
+            <img src="/logo-avaliapro.png" alt="AvaliaPro" className="h-16 w-auto" />
             <div>
               <p className="text-sm font-medium text-blue-600">AvaliaPro</p>
               <h1 className="text-3xl font-semibold text-gray-900">Painel principal</h1>
