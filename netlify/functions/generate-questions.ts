@@ -191,9 +191,10 @@ function buildPrompt(args: PromptArgs): string {
     `Quantidade total: ${quantidade}. Objetivas: ${qtdObjetivas ?? "livre"}. Dissertativas: ${qtdDissertativas ?? "livre"}.`,
     valorTxt,
     "",
-    "Formato obrigatorio da resposta:",
+    "Formato obrigatorio da resposta (JSON puro, sem markdown):",
     `{"questoes":[{"tipo":"objetiva|discursiva","enunciado":"...","alternativas":["A","B","C","D"],"resposta_correta":"A","valor":1}]}`,
-    "Sem markdown, sem ```.",
+    "Para discursivas, SEMPRE preencha resposta_correta com 1-3 frases de gabarito (nunca deixe vazio).",
+    "Para objetivas, inclua sempre resposta_correta como letra (A, B, C ou D).",
   ]
     .filter(Boolean)
     .join("\n")
@@ -242,11 +243,17 @@ function normalizeQuestion(value: any, index: number, defaultValue: number) {
     alternativas.push("")
   }
 
-  const resposta =
+  let resposta =
     value?.resposta_correta ||
+    value?.resposta ||
+    value?.resposta_esperada ||
     value?.gabarito ||
     (tipo === "objetiva" && alternativas.length ? "A" : "") ||
     ""
+
+  if (tipo === "discursiva" && !resposta) {
+    resposta = "Resposta não informada."
+  }
 
   const valor = Number(value?.valor ?? defaultValue ?? 1) || defaultValue || 1
 
