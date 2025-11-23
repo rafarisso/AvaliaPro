@@ -13,6 +13,7 @@ import ModelosPage from "./src/pages/modelos/ModelosPage"
 import RelatoriosPage from "./src/pages/relatorios/RelatoriosPage"
 import NovaAvaliacao from "./src/pages/avaliacoes/NovaAvaliacao"
 import NovoPlano from "./src/pages/plano/NovoPlano"
+import TeacherBoost from "./src/pages/TeacherBoost"
 
 function AppRoutes() {
   const { user, loading } = useAuth()
@@ -65,6 +66,7 @@ function AppRoutes() {
         }
       />
       <Route path="/landing" element={<LandingPage />} />
+      <Route path="/teacher-boost" element={<TeacherBoost />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/health" element={<Health />} />
       <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />

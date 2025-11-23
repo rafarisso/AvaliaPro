@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "../../../hooks/useAuth"
 import { getSupabase } from "../../services/supabaseClient"
 import { generateQuestionsWithAI, type GeneratedQuestion } from "../../services/ai"
@@ -62,6 +63,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 export default function NovaAvaliacao() {
   const supabase = getSupabase()
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   const [nivel, setNivel] = useState<(typeof NIVEIS)[number]>("Ensino Médio")
   const [disciplina, setDisciplina] = useState(DISCIPLINAS_POR_NIVEL["Ensino Médio"][0])
@@ -390,7 +392,16 @@ export default function NovaAvaliacao() {
 return (
     <div className="mx-auto max-w-6xl space-y-6 p-4">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Criar avaliação</h1>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard")}
+            className="rounded-xl border px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            ← Voltar
+          </button>
+          <h1 className="text-2xl font-semibold">Criar avaliação</h1>
+        </div>
         <p className="text-gray-600">
           Monte avaliações em minutos. Sugira questões com IA e ajuste antes de salvar.
         </p>

@@ -56,7 +56,7 @@ export default function Dashboard() {
 
         <section className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">Atalhos rápidos</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <button
               onClick={() => navigate("/avaliacoes/nova")}
               className="rounded-2xl bg-white px-4 py-6 text-left shadow transition hover:shadow-md"
@@ -84,6 +84,13 @@ export default function Dashboard() {
             >
               <div className="text-lg font-medium text-gray-900">Relatórios</div>
               <div className="text-sm text-gray-500">acompanhamento rápido</div>
+            </button>
+            <button
+              onClick={() => navigate("/modelos")}
+              className="rounded-2xl bg-white px-4 py-6 text-left shadow transition hover:shadow-md"
+            >
+              <div className="text-lg font-medium text-gray-900">Criar slides</div>
+              <div className="text-sm text-gray-500">apresentações para a aula</div>
             </button>
           </div>
         </section>
