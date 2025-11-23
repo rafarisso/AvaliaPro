@@ -357,6 +357,7 @@ export default function NovaAvaliacao() {
       nivel,
       serie,
       tipo,
+      enunciadoGeral,
       questoes: questoes.map((q) => ({
         tipo: q.tipo,
         enunciado: q.enunciado,

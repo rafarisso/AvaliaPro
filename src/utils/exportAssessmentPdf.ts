@@ -6,6 +6,7 @@ export type AssessmentForPdf = {
   nivel: string
   serie: string
   tipo: string
+  enunciadoGeral?: string
   questoes: {
     tipo: "objetiva" | "discursiva"
     enunciado: string
@@ -83,10 +84,24 @@ export function exportAssessmentToPdf(data: AssessmentForPdf) {
 
   cursorY += 40
 
-  // Linha divisória
+  // Nome do aluno
+  doc.text(`Nome do aluno: ${"_".repeat(50)}`, marginLeft, cursorY)
+  cursorY += 18
+
+  // Linha divisóriaória
   doc.setDrawColor(180)
   doc.line(marginLeft, cursorY, 555, cursorY)
   cursorY += 25
+
+  if (data.enunciadoGeral) {
+    doc.setFont("helvetica", "italic")
+    doc.setFontSize(11)
+    const splitIntro = doc.splitTextToSize(data.enunciadoGeral, 520)
+    doc.text(splitIntro, marginLeft, cursorY)
+    cursorY += splitIntro.length * 16 + 12
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(12)
+  }
 
   // ------------------------------
   // TÍTULO DAS QUESTÕES
@@ -127,7 +142,8 @@ export function exportAssessmentToPdf(data: AssessmentForPdf) {
         }
 
         const letra = String.fromCharCode(65 + altIdx)
-        doc.text(`${letra}) ${alt}`, marginLeft + 20, cursorY)
+        const cleanedAlt = cleanAlternative(alt)
+        doc.text(`${letra}) ${cleanedAlt}`, marginLeft + 20, cursorY)
         cursorY += 16
       })
     } else {
@@ -221,7 +237,8 @@ export function exportAnswerKeyToPdf(data: AssessmentKeyForPdf) {
       const alternativas = q.alternativas ?? []
       const letra = (q.resposta_correta || "").trim()
       const idxCorreto = letra ? letra.charCodeAt(0) - 65 : -1
-      const texto = idxCorreto >= 0 && alternativas[idxCorreto] ? alternativas[idxCorreto] : ""
+      const textoRaw = idxCorreto >= 0 && alternativas[idxCorreto] ? alternativas[idxCorreto] : ""
+      const texto = cleanAlternative(textoRaw)
       const label = letra ? `Alternativa correta: ${letra}${texto ? ` - ${texto}` : ""}` : "Alternativa correta: -"
       doc.text(label, marginLeft + 10, cursorY)
       cursorY += 18
@@ -239,4 +256,10 @@ export function exportAnswerKeyToPdf(data: AssessmentKeyForPdf) {
   })
 
   doc.save(`${data.titulo || "avaliacao"}-gabarito.pdf`)
+}
+
+
+function cleanAlternative(value: string): string {
+  if (!value) return ""
+  return value.replace(/^[A-Da-d]\s*[\)\.\-:]?\s*/, "").trim()
 }
