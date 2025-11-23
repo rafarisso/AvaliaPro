@@ -56,38 +56,24 @@ export default function Dashboard() {
 
         <section className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">Atalhos rápidos</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <button
               onClick={() => navigate("/avaliacoes/nova")}
-              className="rounded-2xl bg-white px-4 py-6 text-left shadow transition hover:shadow-md"
+              className="rounded-2xl bg-white px-4 py-6 text-left shadow transition hover:shadow-md hover:scale-[1.02] active:scale-[0.99] duration-150"
             >
               <div className="text-lg font-medium text-gray-900">Criar avaliação</div>
               <div className="text-sm text-gray-500">em minutos</div>
             </button>
             <button
               onClick={() => navigate("/plano-aula/novo")}
-              className="rounded-2xl bg-white px-4 py-6 text-left shadow transition hover:shadow-md"
+              className="rounded-2xl bg-white px-4 py-6 text-left shadow transition hover:shadow-md hover:scale-[1.02] active:scale-[0.99] duration-150"
             >
               <div className="text-lg font-medium text-gray-900">Plano de aula</div>
               <div className="text-sm text-gray-500">organize e compartilhe</div>
             </button>
             <button
               onClick={() => navigate("/modelos")}
-              className="rounded-2xl bg-white px-4 py-6 text-left shadow transition hover:shadow-md"
-            >
-              <div className="text-lg font-medium text-gray-900">Modelos prontos</div>
-              <div className="text-sm text-gray-500">por disciplina</div>
-            </button>
-            <button
-              onClick={() => navigate("/relatorios")}
-              className="rounded-2xl bg-white px-4 py-6 text-left shadow transition hover:shadow-md"
-            >
-              <div className="text-lg font-medium text-gray-900">Relatórios</div>
-              <div className="text-sm text-gray-500">acompanhamento rápido</div>
-            </button>
-            <button
-              onClick={() => navigate("/modelos")}
-              className="rounded-2xl bg-white px-4 py-6 text-left shadow transition hover:shadow-md"
+              className="rounded-2xl bg-white px-4 py-6 text-left shadow transition hover:shadow-md hover:scale-[1.02] active:scale-[0.99] duration-150"
             >
               <div className="text-lg font-medium text-gray-900">Criar slides</div>
               <div className="text-sm text-gray-500">apresentações para a aula</div>

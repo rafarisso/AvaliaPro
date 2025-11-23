@@ -12,9 +12,10 @@ export default function Header() {
           <span className="sr-only">AvaliaPro</span>
         </div>
         <nav className="flex items-center gap-6 text-sm">
-          <Link to="/" className="text-gray-700 hover:text-black">Início</Link>
-          <Link to="/login" className="text-gray-700 hover:text-black">Entrar</Link>
-          <Link to="/dashboard" className="text-gray-700 hover:text-black">Dashboard</Link>
+          <Link to="/dashboard" className="text-gray-700 hover:text-black transition">Dashboard</Link>
+          <Link to="/avaliacoes/nova" className="text-gray-700 hover:text-black transition">Criar avaliação</Link>
+          <Link to="/modelos" className="text-gray-700 hover:text-black transition">Criar slides</Link>
+          <Link to="/login" className="text-gray-700 hover:text-black transition">Entrar</Link>
           {isDev && (
             <Link to="/health" className="text-gray-500 hover:text-black">Health</Link>
           )}
