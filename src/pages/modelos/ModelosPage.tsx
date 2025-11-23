@@ -1,10 +1,12 @@
 import { useState, useRef } from "react"
+import { useNavigate } from "react-router-dom"
 import pptxgen from "pptxgenjs"
 import { generateSlides, type Slide } from "../../services/slides"
 
 type Attachment = { name: string; type: string; data: string }
 
 export default function ModelosPage() {
+  const navigate = useNavigate()
   const [tema, setTema] = useState("")
   const [disciplina, setDisciplina] = useState("")
   const [serie, setSerie] = useState("")
@@ -78,30 +80,44 @@ export default function ModelosPage() {
     }
   }
 
-  const downloadPPTX = () => {
+  const downloadPPTX = async () => {
     if (!slides.length) {
       alert("Gere os slides primeiro.")
       return
     }
-    const pptx = new pptxgen()
-    pptx.title = tema || "Slides"
-    slides.forEach((s, idx) => {
-      const slide = pptx.addSlide()
-      slide.addText(s.titulo || `Slide ${idx + 1}`, { x: 0.5, y: 0.4, fontSize: 24, bold: true, color: "203864" })
-      const bulletY = 1.3
-      const bullets = (s.topicos?.length ? s.topicos : [""] ).map((t) => `• ${t}`)
-      slide.addText(bullets, { x: 0.7, y: bulletY, fontSize: 16, lineSpacing: 24, color: "1f1f1f" })
-      if (s.nota) {
-        slide.addText(`Nota: ${s.nota}`, { x: 0.7, y: 4.5, fontSize: 12, color: "6b7280", italic: true })
-      }
-    })
-    pptx.writeFile({ fileName: `${tema || "slides"}.pptx` })
+    try {
+      const pptx = new pptxgen()
+      pptx.title = tema || "Slides"
+      slides.forEach((s, idx) => {
+        const slide = pptx.addSlide()
+        slide.addText(s.titulo || `Slide ${idx + 1}`, { x: 0.5, y: 0.4, fontSize: 24, bold: true, color: "203864" })
+        const bulletY = 1.3
+        const bullets = (s.topicos?.length ? s.topicos : [""]).map((t) => `• ${t}`)
+        slide.addText(bullets, { x: 0.7, y: bulletY, fontSize: 16, lineSpacing: 24, color: "1f1f1f" })
+        if (s.nota) {
+          slide.addText(`Nota: ${s.nota}`, { x: 0.7, y: 4.5, fontSize: 12, color: "6b7280", italic: true })
+        }
+      })
+      await pptx.writeFile({ fileName: `${tema || "slides"}.pptx` })
+    } catch (error: any) {
+      console.error("[PPTX]", error)
+      setErro("Não foi possível baixar o PPTX. Tente novamente.")
+    }
   }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Criar slides com IA</h1>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard")}
+            className="rounded-xl border px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            ← Voltar
+          </button>
+          <h1 className="text-2xl font-semibold">Criar slides com IA</h1>
+        </div>
         <p className="text-gray-600">Envie imagens ou descreva o tema e receba um PPT com tópicos prontos.</p>
       </div>
 
