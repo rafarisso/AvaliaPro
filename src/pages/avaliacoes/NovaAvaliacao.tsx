@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from "react"
 import { useAuth } from "../../../hooks/useAuth"
 import { getSupabase } from "../../services/supabaseClient"
 import { generateQuestionsWithAI, type GeneratedQuestion } from "../../services/ai"
-import { exportAssessmentToPdf, type AssessmentForPdf } from "../../utils/exportAssessmentPdf"
+import {
+  exportAssessmentToPdf,
+  exportAnswerKeyToPdf,
+  type AssessmentForPdf,
+  type AssessmentKeyForPdf,
+} from "../../utils/exportAssessmentPdf"
 
 type Questao = GeneratedQuestion & {
   alternativas: string[]
@@ -340,9 +345,10 @@ export default function NovaAvaliacao() {
 
   const disciplinas = DISCIPLINAS_POR_NIVEL[nivel]
 
+  
   const handleExportPdf = () => {
     if (!questoes.length) {
-      alert("Gere ou adicione questões antes de exportar o PDF.")
+      alert("Gere ou adicione questoes antes de exportar o PDF.")
       return
     }
     const payload: AssessmentForPdf = {
@@ -362,11 +368,37 @@ export default function NovaAvaliacao() {
       exportAssessmentToPdf(payload)
     } catch (error: any) {
       console.error("[PDF]", error)
-      alert(error?.message ?? "Não foi possível gerar o PDF.")
+      alert(error?.message ?? "Nao foi possivel gerar o PDF.")
     }
   }
 
-  return (
+  const handleExportAnswerKeyPdf = () => {
+    if (!questoes.length) {
+      alert("Gere ou adicione questoes antes de exportar o gabarito.")
+      return
+    }
+    const payload: AssessmentKeyForPdf = {
+      titulo,
+      disciplina,
+      nivel,
+      serie,
+      tipo,
+      questoes: questoes.map((q) => ({
+        tipo: q.tipo,
+        enunciado: q.enunciado,
+        alternativas: q.tipo === "objetiva" ? q.alternativas : undefined,
+        resposta_correta: q.resposta_correta,
+        valor: q.valor,
+      })),
+    }
+    try {
+      exportAnswerKeyToPdf(payload)
+    } catch (error: any) {
+      console.error("[PDF-Gabarito]", error)
+      alert(error?.message ?? "Nao foi possivel gerar o gabarito em PDF.")
+    }
+  }
+return (
     <div className="mx-auto max-w-6xl space-y-6 p-4">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Criar avaliação</h1>
@@ -785,6 +817,14 @@ export default function NovaAvaliacao() {
                           </div>
                         ))}
                       </div>
+                      <div className="text-xs text-green-700">
+                        Gabarito:{" "}
+                        {q.resposta_correta
+                          ? `${q.resposta_correta} ${
+                              q.alternativas?.[q.resposta_correta.charCodeAt(0) - 65] || ""
+                            }`.trim()
+                          : "—"}
+                      </div>
                     </div>
                   )}
 
@@ -797,6 +837,9 @@ export default function NovaAvaliacao() {
                         className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                         rows={2}
                       />
+                      <div className="text-xs text-green-700">
+                        Resposta esperada: {q.resposta_correta || "—"}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -872,6 +915,13 @@ export default function NovaAvaliacao() {
               </button>
               <button
                 type="button"
+                onClick={handleExportAnswerKeyPdf}
+                className="w-full rounded-xl border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+              >
+                Baixar gabarito em PDF
+              </button>
+              <button
+                type="button"
                 onClick={handleSalvar}
                 disabled={saving}
                 className="w-full rounded-xl bg-blue-600 px-4 py-2 text-white text-sm font-medium transition hover:bg-blue-700 disabled:opacity-60"
@@ -918,10 +968,20 @@ export default function NovaAvaliacao() {
                       ))}
                     </ul>
                   )}
+                  {q.tipo === "objetiva" && (
+                    <div className="text-xs text-green-700">
+                      Gabarito:{" "}
+                      {q.resposta_correta
+                        ? `${q.resposta_correta} ${
+                            q.alternativas?.[q.resposta_correta.charCodeAt(0) - 65] || ""
+                          }`.trim()
+                        : "—"}
+                    </div>
+                  )}
                   {q.tipo === "discursiva" && (
                     <>
                       <div className="text-sm text-gray-600 italic">
-                        Resposta esperada: {q.resposta_correta}
+                        Resposta esperada: {q.resposta_correta || "—"}
                       </div>
                       {/* linhas visuais para o aluno responder na visualização */}
                       <div className="mt-2 space-y-1">

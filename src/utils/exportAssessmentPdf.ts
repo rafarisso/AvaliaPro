@@ -11,6 +11,22 @@ export type AssessmentForPdf = {
     enunciado: string
     alternativas?: string[]
     valor: number
+    resposta_correta?: string
+  }[]
+}
+
+export type AssessmentKeyForPdf = {
+  titulo: string
+  disciplina: string
+  nivel: string
+  serie: string
+  tipo: string
+  questoes: {
+    tipo: "objetiva" | "discursiva"
+    enunciado: string
+    alternativas?: string[]
+    resposta_correta?: string
+    valor: number
   }[]
 }
 
@@ -134,4 +150,93 @@ export function exportAssessmentToPdf(data: AssessmentForPdf) {
   // SALVAR ARQUIVO
   // ------------------------------
   doc.save(`${data.titulo || "avaliacao"}.pdf`)
+}
+
+export function exportAnswerKeyToPdf(data: AssessmentKeyForPdf) {
+  if (!data.questoes.length) {
+    throw new Error("Sem questoes para exportar.")
+  }
+
+  const doc = new jsPDF({
+    unit: "pt",
+    format: "a4",
+  })
+
+  const marginLeft = 40
+  let cursorY = 50
+
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(18)
+  doc.text(`${data.titulo || "Avaliação"} - Gabarito`, marginLeft, cursorY)
+  cursorY += 28
+
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(11)
+
+  const headerLeft = [
+    `Disciplina: ${data.disciplina}`,
+    `Série/Ano: ${data.serie}`,
+  ]
+
+  const headerRight = [
+    `Nível: ${data.nivel}`,
+    `Tipo: ${data.tipo}`,
+  ]
+
+  const rightX = 320
+
+  headerLeft.forEach((line, index) => {
+    doc.text(line, marginLeft, cursorY + index * 14)
+  })
+
+  headerRight.forEach((line, index) => {
+    doc.text(line, rightX, cursorY + index * 14)
+  })
+
+  cursorY += 40
+  doc.setDrawColor(180)
+  doc.line(marginLeft, cursorY, 555, cursorY)
+  cursorY += 25
+
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(14)
+  doc.text("Gabarito", marginLeft, cursorY)
+  cursorY += 24
+
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(12)
+
+  data.questoes.forEach((q, idx) => {
+    if (cursorY > 760) {
+      doc.addPage()
+      cursorY = 50
+    }
+
+    const enunciado = `${idx + 1}. ${q.enunciado}`
+    const splitEnunciado = doc.splitTextToSize(enunciado, 520)
+    doc.text(splitEnunciado, marginLeft, cursorY)
+    cursorY += splitEnunciado.length * 16 + 8
+
+    if (q.tipo === "objetiva") {
+      const alternativas = q.alternativas ?? []
+      const letra = (q.resposta_correta || "").trim()
+      const idxCorreto = letra ? letra.charCodeAt(0) - 65 : -1
+      const texto = idxCorreto >= 0 && alternativas[idxCorreto] ? alternativas[idxCorreto] : ""
+      const label = letra ? `Alternativa correta: ${letra}${texto ? ` - ${texto}` : ""}` : "Alternativa correta: -"
+      doc.text(label, marginLeft + 10, cursorY)
+      cursorY += 18
+    } else {
+      const resp = q.resposta_correta?.trim() || "Resposta não informada."
+      const splitResp = doc.splitTextToSize(`Resposta esperada: ${resp}`, 520)
+      doc.text(splitResp, marginLeft + 10, cursorY)
+      cursorY += splitResp.length * 16
+    }
+
+    doc.setFontSize(10)
+    doc.text(`Valor: ${q.valor} ponto(s)`, marginLeft + 10, cursorY + 10)
+    doc.setFontSize(12)
+    cursorY += 24
+  })
+
+  doc.save(`${data.titulo || "avaliacao"}-gabarito.pdf`)
 }
