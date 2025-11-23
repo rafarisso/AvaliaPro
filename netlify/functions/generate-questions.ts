@@ -7,8 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 }
 
-const RAW_MODEL = process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || "gemini-2.0-flash"
-const MODEL = RAW_MODEL.startsWith("models/") ? RAW_MODEL : `models/${RAW_MODEL}`
+const RAW_MODEL = (process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || "gemini-2.0-flash").trim()
+const MODEL = RAW_MODEL.startsWith("models/") ? RAW_MODEL.replace(/^models\//, "") : RAW_MODEL
 
 const API_KEY =
   process.env.GEMINI_API_KEY ||
@@ -142,8 +142,9 @@ const handler: Handler = async (event) => {
   } catch (error: any) {
     console.error("[generate-questions]", error)
     const message = error?.message || "Falha ao gerar questoes."
+    const status = Number(error?.status) || 500
     return {
-      statusCode: 500,
+      statusCode: status >= 400 && status < 600 ? status : 500,
       headers: corsHeaders,
       body: JSON.stringify({ error: message }),
     }
