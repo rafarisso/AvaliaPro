@@ -56,7 +56,6 @@ const DISCIPLINAS_POR_NIVEL: Record<(typeof NIVEIS)[number], string[]> = {
 const TIPOS = ["Prova", "Lista de exercícios", "Atividade avaliativa", "Simulado"]
 
 const DEFAULT_ALTERNATIVAS = ["", "", "", ""]
-const MAX_DESCRICAO = 400
 const MAX_FILES = 10
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
@@ -74,8 +73,6 @@ export default function NovaAvaliacao() {
   const [totalQuestoes, setTotalQuestoes] = useState<number>(5)
   const [valorTotal, setValorTotal] = useState<number>(10)
   const [dificuldade, setDificuldade] = useState<(typeof DIFICULDADES)[number]>("Médio")
-  const [descricao, setDescricao] = useState("")
-  const [descricaoErro, setDescricaoErro] = useState<string | null>(null)
   const [enunciadoGeral, setEnunciadoGeral] = useState("")
 
   const [temaIA, setTemaIA] = useState("")
@@ -181,17 +178,6 @@ export default function NovaAvaliacao() {
     void processFiles(files)
   }
 
-  const handleDescricaoChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = event.target.value
-    if (value.length > MAX_DESCRICAO) {
-      setDescricao(value.slice(0, MAX_DESCRICAO))
-      setDescricaoErro(`Máximo de ${MAX_DESCRICAO} caracteres.`)
-    } else {
-      setDescricao(value)
-      setDescricaoErro(null)
-    }
-  }
-
   const handleGerarIA = async () => {
     setErro(null)
     setMensagem(null)
@@ -207,7 +193,7 @@ export default function NovaAvaliacao() {
         disciplina,
         serieAno: serie,
         quantidade: totalQuestoes,
-        objetivos: enunciadoGeral || descricao, // objetivo pedagógico ajuda a IA
+        objetivos: enunciadoGeral, // objetivo pedagógico ajuda a IA
         qtdObjetivas,
         qtdDissertativas,
         nivel,
@@ -220,7 +206,9 @@ export default function NovaAvaliacao() {
         tipo: q.tipo,
         enunciado: q.enunciado,
         alternativas: q.alternativas && q.alternativas.length ? q.alternativas : [...DEFAULT_ALTERNATIVAS],
-        resposta_correta: q.resposta_correta,
+        resposta_correta:
+          q.resposta_correta?.trim() ||
+          (q.tipo === "discursiva" ? "Resposta não informada." : ""),
         valor: q.valor,
       }))
 
@@ -589,28 +577,6 @@ return (
                 />
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-700" htmlFor="descricao">
-                  Descrição / objetivo da avaliação
-                </label>
-                <textarea
-                  id="descricao"
-                  value={descricao}
-                  onChange={handleDescricaoChange}
-                  className="mt-1 w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-                  rows={3}
-                  placeholder="Ex.: Avaliar o conhecimento dos alunos sobre rochas e minerais, identificando se reconhecem tipos de rochas, processos de formação e interpretação de mapas."
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Descreva em poucas frases o que você quer avaliar (conteúdos, habilidades, competências).
-                  Isso ajuda a IA a sugerir questões melhores. Máx. {MAX_DESCRICAO} caracteres.
-                </p>
-                {descricaoErro && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {descricaoErro}
-                  </p>
-                )}
-              </div>
             </div>
           </div>
 
