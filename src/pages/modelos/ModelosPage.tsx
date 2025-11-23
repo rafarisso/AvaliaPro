@@ -88,14 +88,33 @@ export default function ModelosPage() {
     try {
       const pptx = new PptxGenJS()
       pptx.title = tema || "Slides"
+      pptx.layout = "16x9"
       slides.forEach((s, idx) => {
         const slide = pptx.addSlide()
-        slide.addText(s.titulo || `Slide ${idx + 1}`, { x: 0.5, y: 0.4, fontSize: 24, bold: true, color: "203864" })
-        const bulletY = 1.3
-        const bullets = (s.topicos?.length ? s.topicos : [""])
-          .map((t) => `• ${t}`)
-          .join("\n")
-        slide.addText(bullets, { x: 0.7, y: bulletY, fontSize: 16, lineSpacing: 24, color: "1f1f1f", bullet: true })
+        slide.addText(s.titulo || `Slide ${idx + 1}`, {
+          x: 0.5,
+          y: 0.4,
+          w: 9,
+          fontSize: 26,
+          bold: true,
+          color: "203864",
+        })
+
+        const bulletItems =
+          s.topicos?.length && s.topicos.length > 0
+            ? s.topicos.map((t) => ({ text: t, options: { bullet: true } }))
+            : [{ text: "", options: { bullet: true } }]
+
+        slide.addText(bulletItems as any, {
+          x: 0.7,
+          y: 1.4,
+          w: 8.6,
+          h: 3.5,
+          fontSize: 18,
+          lineSpacing: 30,
+          color: "1f1f1f",
+        })
+
         if (s.nota) {
           slide.addText(`Nota: ${s.nota}`, { x: 0.7, y: 4.5, fontSize: 12, color: "6b7280", italic: true })
         }
