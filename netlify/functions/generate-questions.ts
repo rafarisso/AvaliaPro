@@ -8,7 +8,7 @@ const corsHeaders = {
 }
 
 const RAW_MODEL = (process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || "gemini-2.0-flash").trim()
-const MODEL = RAW_MODEL.startsWith("models/") ? RAW_MODEL.replace(/^models\//, "") : RAW_MODEL
+const MODEL = sanitizeModel(RAW_MODEL)
 
 const API_KEY =
   process.env.GEMINI_API_KEY ||
@@ -261,4 +261,11 @@ function normalizeQuestion(value: any, index: number, defaultValue: number) {
     resposta_correta: String(resposta || "").trim(),
     valor,
   }
+}
+
+function sanitizeModel(raw: string): string {
+  const clean = (raw || "").replace(/^models\//i, "").trim()
+  const match = clean.match(/(gemini[-\w\.]+)/i)
+  if (match && match[1]) return match[1]
+  return "gemini-2.0-flash"
 }
