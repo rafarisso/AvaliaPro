@@ -1,6 +1,6 @@
 import { useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import pptxgen from "pptxgenjs"
+import PptxGenJS from "pptxgenjs"
 import { generateSlides, type Slide } from "../../services/slides"
 
 type Attachment = { name: string; type: string; data: string }
@@ -86,7 +86,7 @@ export default function ModelosPage() {
       return
     }
     try {
-      const pptx = new pptxgen()
+      const pptx = new PptxGenJS()
       pptx.title = tema || "Slides"
       slides.forEach((s, idx) => {
         const slide = pptx.addSlide()
