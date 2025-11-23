@@ -32,10 +32,20 @@ export const SchoolProvider: React.FC<{ children: ReactNode }> = ({ children }) 
      return;
    }
    setLoading(true);
-   const { data: perfil } = await supabase.from('usuarios').select('*').eq('id', user.id).single();
+   const { data: perfil, error: perfilError } = await supabase
+     .from('usuarios')
+     .select('*')
+     .eq('id', user.id)
+     .maybeSingle();
+   if (perfilError) console.warn('[School] perfil nao encontrado', perfilError);
    setUsuario(perfil ?? null);
    if (perfil?.escola_id) {
-     const { data: escolaData } = await supabase.from('escolas').select('*').eq('id', perfil.escola_id).single();
+     const { data: escolaData, error: escolaError } = await supabase
+       .from('escolas')
+       .select('*')
+       .eq('id', perfil.escola_id)
+       .maybeSingle();
+     if (escolaError) console.warn('[School] escola nao encontrada', escolaError);
      setEscola(escolaData ?? null);
    } else {
      setEscola(null);

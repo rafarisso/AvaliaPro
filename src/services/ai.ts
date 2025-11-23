@@ -21,19 +21,33 @@ export type GenerateParams = {
   nivel?: string
   anexos?: string[]
   valorTotal?: number
+  attachments?: { name: string; type: string; data: string }[]
 }
+
+const FUNCTIONS_BASE =
+  (typeof window !== "undefined" && (window as any).ENV?.VITE_FUNCTIONS_BASE_URL) ||
+  import.meta.env.VITE_FUNCTIONS_BASE_URL ||
+  (import.meta.env.DEV ? "http://localhost:8888/.netlify/functions" : "/.netlify/functions")
 
 /**
  * Chama a função serverless que fala com o Gemini.
  */
-export async function generateQuestionsWithAI(
-  params: GenerateParams
-): Promise<GeneratedQuestion[]> {
-  const resp = await fetch("/.netlify/functions/generate-questions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
-  })
+export async function generateQuestionsWithAI(params: GenerateParams): Promise<GeneratedQuestion[]> {
+  const base = FUNCTIONS_BASE.replace(/\/$/, "")
+  const url = `${base}/generate-questions`
+
+  let resp: Response
+  try {
+    resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    })
+  } catch (error: any) {
+    throw new Error(
+      `Nao foi possivel acessar a funcao de IA. Verifique se o Netlify dev esta rodando (functions em ${url}) ou defina VITE_FUNCTIONS_BASE_URL apontando para o deploy.`
+    )
+  }
 
   if (!resp.ok) {
     let msg = "Erro ao chamar a IA. Tente novamente em alguns minutos."

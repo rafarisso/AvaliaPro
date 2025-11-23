@@ -6,7 +6,10 @@ export async function isBillingEnabled(): Promise<boolean> {
     .from("app_settings")
     .select("value")
     .eq("key", "billing_enabled")
-    .single()
-  if (error) return false
+    .maybeSingle()
+  if (error) {
+    console.warn("[flags] billing flag ausente ou indisponivel", error)
+    return false
+  }
   return data?.value?.value === true
 }

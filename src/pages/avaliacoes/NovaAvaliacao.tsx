@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useAuth } from "../../../hooks/useAuth"
 import { getSupabase } from "../../services/supabaseClient"
 import { generateQuestionsWithAI, type GeneratedQuestion } from "../../services/ai"
@@ -52,6 +52,8 @@ const TIPOS = ["Prova", "Lista de exercícios", "Atividade avaliativa", "Simulad
 
 const DEFAULT_ALTERNATIVAS = ["", "", "", ""]
 const MAX_DESCRICAO = 400
+const MAX_FILES = 10
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 export default function NovaAvaliacao() {
   const supabase = getSupabase()
@@ -73,6 +75,8 @@ export default function NovaAvaliacao() {
 
   const [temaIA, setTemaIA] = useState("")
   const [arquivos, setArquivos] = useState<File[]>([])
+  const [anexosIA, setAnexosIA] = useState<{ name: string; type: string; data: string }[]>([])
+  const cameraInputRef = useRef<HTMLInputElement | null>(null)
   const [questoes, setQuestoes] = useState<Questao[]>([])
 
   const [loadingIA, setLoadingIA] = useState(false)
@@ -124,9 +128,52 @@ export default function NovaAvaliacao() {
     setTotalQuestoes(qtdObjetivas + val)
   }
 
+  const fileToAttachment = (file: File): Promise<{ name: string; type: string; data: string }> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = reader.result as string
+        const base64 = result.split(",")[1] || ""
+        resolve({ name: file.name, type: file.type || "application/octet-stream", data: base64 })
+      }
+      reader.onerror = () => reject(new Error("Erro ao ler arquivo."))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const processFiles = async (incoming: File[]) => {
+    if (!incoming.length) return
+    setErro(null)
+    const merged = [...arquivos, ...incoming]
+    const limited = merged.slice(0, MAX_FILES)
+    if (merged.length > MAX_FILES) {
+      setErro(`Limite de ${MAX_FILES} arquivos. Somente os primeiros foram considerados.`)
+    }
+
+    const imageFiles = limited.filter((f) => f.type.startsWith("image/"))
+    const allowedImages = imageFiles.filter((f) => f.size <= MAX_IMAGE_BYTES)
+    if (allowedImages.length < imageFiles.length) {
+      setErro(`Imagens acima de 5MB foram ignoradas.`)
+    }
+
+    try {
+      const attachments = await Promise.all(allowedImages.map(fileToAttachment))
+      setAnexosIA(attachments)
+    } catch (e) {
+      setErro("Nao foi possivel ler os arquivos de imagem. Tente novamente.")
+    }
+
+    setArquivos(limited)
+  }
+
   const handleUploadChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files ? Array.from(event.target.files).slice(0, 3) : []
-    setArquivos(files)
+    const files = event.target.files ? Array.from(event.target.files) : []
+    void processFiles(files)
+  }
+
+  const handleCameraChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files ? Array.from(event.target.files) : []
+    void processFiles(files)
   }
 
   const handleDescricaoChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -160,6 +207,7 @@ export default function NovaAvaliacao() {
         qtdDissertativas,
         nivel,
         anexos: anexosNomes,
+        attachments: anexosIA,
         valorTotal,
       })
 
@@ -559,14 +607,35 @@ export default function NovaAvaliacao() {
             </div>
 
             <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700">Enviar material (imagens ou PDFs, até 3)</label>
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                multiple
-                onChange={handleUploadChange}
-                className="w-full text-sm text-gray-600"
-              />
+              <label className="text-sm font-medium text-gray-700">Enviar material (imagens, ate 10)</label>
+              <div className="flex flex-wrap gap-2">
+                <label className="rounded-xl border px-3 py-2 text-sm font-medium hover:bg-gray-50 cursor-pointer">
+                  Selecionar arquivos
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleUploadChange}
+                    className="hidden"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="rounded-xl border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                >
+                  Tirar foto
+                </button>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  onChange={handleCameraChange}
+                  className="hidden"
+                />
+              </div>
               {arquivos.length > 0 && (
                 <ul className="text-sm text-gray-600 space-y-1">
                   {arquivos.map((file, idx) => (
