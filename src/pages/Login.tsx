@@ -49,7 +49,12 @@ export default function Login() {
       >
         <div className="text-center space-y-3">
           <div className="flex justify-center">
-            <img src="/AvaliaPro_logo.svg" alt="AvaliaPro" className="h-14 w-auto" />
+            <img
+              src="/AvaliaPro_logo.png"
+              alt="AvaliaPro"
+              className="h-20 w-auto object-contain"
+              loading="lazy"
+            />
           </div>
           <h2 className="text-2xl font-semibold">Entre na sua conta</h2>
           <p className="text-sm text-gray-600">Use seu e-mail corporativo para acessar o AvaliaPro.</p>
@@ -92,7 +97,7 @@ export default function Login() {
           disabled={loading}
           className="w-full rounded-xl bg-primary text-white py-3 font-medium hover:bg-primary-dark transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {loading ? "Entrando." : "Entrar"}
+          {loading ? "Entrando..." : "Entrar"}
         </button>
 
         <div className="flex items-center gap-3">
