@@ -33,7 +33,7 @@ export default function Dashboard() {
             <img
               src="/AvaliaPro_logo.png"
               alt="AvaliaPro"
-              className="h-24 w-auto object-contain"
+              className="h-30 w-auto object-contain"
               loading="lazy"
             />
             <div>
