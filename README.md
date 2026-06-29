@@ -1,7 +1,13 @@
 # 🧠 AvaliaPro
 
-**AvaliaPro** é uma plataforma web voltada a professores e escolas, que automatiza a criação, organização e análise de **avaliações, planos de aula e relatórios pedagógicos**.  
-O sistema utiliza **Inteligência Artificial** para gerar conteúdos educativos, rubricas, slides e avaliações adaptadas, otimizando o tempo do educador.
+**AvaliaPro** é uma plataforma web voltada a professores, que automatiza a
+**criação e a correção** de avaliações, além de gerar **slides** e **planos de
+aula**. O sistema usa **Inteligência Artificial** (Google Gemini) para gerar
+conteúdos e para **corrigir provas manuscritas** — objetivas e dissertativas —
+via OCR, otimizando o tempo do educador.
+
+> O objetivo é uma ferramenta que rode **liso, sem erros**, e seja útil de fato
+> na rotina do professor.
 
 ---
 
@@ -11,7 +17,8 @@ O sistema utiliza **Inteligência Artificial** para gerar conteúdos educativos,
 - **Estilo:** [TailwindCSS](https://tailwindcss.com/)
 - **Backend:** [Supabase](https://supabase.com/) (PostgreSQL + Auth + RLS)
 - **Deploy:** [Netlify](https://www.netlify.com/)
-- **Integrações futuras:** [Stripe](https://stripe.com/br) para assinatura mensal e IA via [Google Gemini](https://aistudio.google.com/)
+- **IA:** [Azure OpenAI](https://azure.microsoft.com/products/ai-services/openai-service) (deployment `o4-mini`) — geração de provas e correção (OCR via visão do próprio modelo)
+- **Integrações futuras:** [Stripe](https://stripe.com/br) para assinatura mensal
 
 ---
 
@@ -49,21 +56,32 @@ AvaliaPro/
 
 ---
 
-## 🧩 Principais Tabelas no Supabase
+## 🧩 Banco de dados (Supabase)
+
+> ⚠️ **Importante:** o banco tem tabelas duplicadas de iterações antigas. Em
+> 2026-06-29 o projeto foi consolidado no **modelo em português**
+> (`avaliacoes`/`questoes`), com ownership por **professor individual**
+> (`criado_por = auth.uid()`) e RLS em tudo.
+>
+> Antes de mexer no schema ou no código de dados, leia **[`CLAUDE.md`](./CLAUDE.md)**
+> e **[`docs/ARQUITETURA.md`](./docs/ARQUITETURA.md)**.
+
+### Modelo canônico (use este)
 
 | Tabela | Função |
 |--------|--------|
-| **users** | Usuários autenticados (professores) |
-| **profiles** | Dados do usuário (nome, escola, disciplinas) |
-| **assessments** | Avaliações criadas |
-| **assessment_items** | Questões de cada avaliação |
-| **assessment_keys** | Gabaritos automáticos |
+| **avaliacoes** | Avaliações/provas criadas pelo professor |
+| **questoes** | Questões da avaliação (com `resposta_correta` por questão) |
+| **turmas** | Turmas do professor |
+| **alunos** | Alunos de cada turma |
+| **aplicacoes** | Avaliação aplicada a uma turma (evento da prova) |
+| **submissoes** | Prova escaneada de um aluno (Storage + status do OCR + nota) |
+| **respostas_aluno** | Resultado do OCR questão a questão |
 | **rubrics** | Rubricas de avaliação |
-| **students** | Lista de alunos importados |
-| **lesson_plans** | Planos de aula gerados |
-| **reports** | Relatórios pedagógicos |
-| **notifications_queue** | Mensagens do sistema |
-| **app_settings** | Configurações do app |
-| **audit_logs** | Logs e auditorias automáticas |
-| **metrics_dau** | Métricas de uso diário (Daily Active Users) |
-| **next_best_action** | Sugestões automáticas de ação do sistema |
+
+### Deprecado (não usar em código novo)
+
+`assessments`, `assessment_items`, `assessment_keys`, `students` — substituídos
+pelo modelo acima. Mantidos por ora para não perder dados.
+
+> Migrations versionadas em `supabase/migrations/`.
