@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Netlify CLI (estado local de link + cache)
+.netlify
+
+# Variáveis de ambiente com segredos
+.env
+.env.*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
