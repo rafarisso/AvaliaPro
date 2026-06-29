@@ -237,45 +237,55 @@ export default function NovaAvaliacao() {
     if (totalQuestoes !== questoes.length) {
       return setErro("A soma de objetivas + discursivas deve bater com o total de questões.")
     }
+    // Objetivas precisam de gabarito marcado — é o que permite a correção automática.
+    if (questoes.some((q) => q.tipo === "objetiva" && !q.resposta_correta?.trim())) {
+      return setErro("Marque a alternativa correta em todas as questões objetivas.")
+    }
+    if (!user?.id) return setErro("Sessão expirada. Faça login novamente para salvar.")
 
     try {
       setSaving(true)
+      const valorQuestao = totalQuestoes
+        ? Number((valorTotal / totalQuestoes).toFixed(2))
+        : null
+
       const { data: inserted, error } = await supabase
-        .from("assessments")
+        .from("avaliacoes")
         .insert({
           titulo,
           disciplina,
           serie,
-          tipo,
-          descricao,
-          valor_total: valorTotal,
-          qtd_objetivas: qtdObjetivas,
-          qtd_dissertativas: qtdDissertativas,
-          user_id: user?.id ?? null,
+          tema: temaIA || null,
           nivel,
           dificuldade,
-          enunciado_geral: enunciadoGeral,
+          tipo,
+          enunciado_geral: enunciadoGeral || null,
+          total_questoes: totalQuestoes,
+          objetivas: qtdObjetivas,
+          dissertativas: qtdDissertativas,
+          valor_total: valorTotal,
+          valor_questao: valorQuestao,
+          criado_por: user.id,
         })
         .select("id")
         .single()
 
       if (error) throw error
-      const assessmentId = inserted?.id
-      if (!assessmentId) throw new Error("Não foi possível obter o ID da avaliação.")
+      const avaliacaoId = inserted?.id
+      if (!avaliacaoId) throw new Error("Não foi possível obter o ID da avaliação.")
 
-      const itemsPayload = questoes.map((q, index) => ({
-        assessment_id: assessmentId,
+      const questoesPayload = questoes.map((q, index) => ({
+        avaliacao_id: avaliacaoId,
         ordem: index + 1,
         tipo: q.tipo,
         enunciado: q.enunciado,
         alternativas: q.tipo === "objetiva" ? q.alternativas : null,
-        resposta_correta: q.tipo === "objetiva" ? q.resposta_correta : q.resposta_correta || q.enunciado,
+        resposta_correta: q.resposta_correta?.trim() || null,
         valor: q.valor,
-        tags: [disciplina, serie, nivel, dificuldade].filter(Boolean),
       }))
 
-      const { error: itemsError } = await supabase.from("assessment_items").insert(itemsPayload)
-      if (itemsError) throw itemsError
+      const { error: questoesError } = await supabase.from("questoes").insert(questoesPayload)
+      if (questoesError) throw questoesError
 
       setMensagem("Avaliação salva com sucesso.")
     } catch (error: any) {
