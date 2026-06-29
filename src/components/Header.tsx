@@ -14,6 +14,8 @@ export default function Header() {
         <nav className="flex items-center gap-6 text-sm">
           <Link to="/dashboard" className="text-gray-700 hover:text-black transition">Dashboard</Link>
           <Link to="/avaliacoes/nova" className="text-gray-700 hover:text-black transition">Criar avaliação</Link>
+          <Link to="/turmas" className="text-gray-700 hover:text-black transition">Turmas</Link>
+          <Link to="/aplicacoes" className="text-gray-700 hover:text-black transition">Aplicar/corrigir</Link>
           <Link to="/modelos" className="text-gray-700 hover:text-black transition">Criar slides</Link>
           {isDev && (
             <Link to="/health" className="text-gray-500 hover:text-black">Health</Link>

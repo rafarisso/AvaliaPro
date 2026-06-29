@@ -82,6 +82,20 @@ export default function Dashboard() {
               <div className="text-lg font-medium text-gray-900">Criar slides</div>
               <div className="text-sm text-gray-500">apresentações para a aula</div>
             </button>
+            <button
+              onClick={() => navigate("/turmas")}
+              className="rounded-2xl bg-white px-4 py-6 text-left shadow transition hover:shadow-md hover:scale-[1.02] active:scale-[0.99] duration-150"
+            >
+              <div className="text-lg font-medium text-gray-900">Turmas e alunos</div>
+              <div className="text-sm text-gray-500">cadastre suas turmas</div>
+            </button>
+            <button
+              onClick={() => navigate("/aplicacoes")}
+              className="rounded-2xl bg-white px-4 py-6 text-left shadow transition hover:shadow-md hover:scale-[1.02] active:scale-[0.99] duration-150"
+            >
+              <div className="text-lg font-medium text-gray-900">Aplicar e corrigir</div>
+              <div className="text-sm text-gray-500">corrija provas dos alunos</div>
+            </button>
           </div>
         </section>
       </main>

@@ -13,6 +13,9 @@ import ModelosPage from "./src/pages/modelos/ModelosPage"
 import RelatoriosPage from "./src/pages/relatorios/RelatoriosPage"
 import NovaAvaliacao from "./src/pages/avaliacoes/NovaAvaliacao"
 import NovoPlano from "./src/pages/plano/NovoPlano"
+import TurmasPage from "./src/pages/turmas/TurmasPage"
+import AplicacoesPage from "./src/pages/aplicacoes/AplicacoesPage"
+import CorrecaoPage from "./src/pages/correcao/CorrecaoPage"
 import TeacherBoost from "./src/pages/TeacherBoost"
 
 function AppRoutes() {
@@ -49,6 +52,30 @@ function AppRoutes() {
         }
       />
       <Route path="/planos/nova" element={<Navigate to="/plano-aula/novo" replace />} />
+      <Route
+        path="/turmas"
+        element={
+          <RequireAuth>
+            <TurmasPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/aplicacoes"
+        element={
+          <RequireAuth>
+            <AplicacoesPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/correcao/:aplicacaoId"
+        element={
+          <RequireAuth>
+            <CorrecaoPage />
+          </RequireAuth>
+        }
+      />
       <Route
         path="/modelos"
         element={
