@@ -1,5 +1,5 @@
 import type { Handler } from "@netlify/functions"
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { callAzureChat, azureConfigured, imagePart, textPart, type ChatPart } from "./lib/azureOpenAI"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,18 +7,10 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 }
 
-const RAW_MODEL = (process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || "gemini-2.0-flash").trim()
-const MODEL = sanitizeModel(RAW_MODEL)
-
-const API_KEY =
-  process.env.GEMINI_API_KEY ||
-  process.env.GOOGLE_GENAI_API_KEY ||
-  process.env.GENAI_API_KEY ||
-  process.env.VITE_GEMINI_API_KEY ||
-  process.env.API_KEY
-
 const MAX_ATTACHMENTS = 10
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
+// o4-mini é modelo de raciocínio: orçamento folgado p/ reasoning + JSON
+const MAX_COMPLETION_TOKENS = 8000
 
 const handler: Handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
@@ -33,11 +25,11 @@ const handler: Handler = async (event) => {
     }
   }
 
-  if (!API_KEY) {
+  if (!azureConfigured()) {
     return {
       statusCode: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ error: "GEMINI_API_KEY nao configurada no backend." }),
+      body: JSON.stringify({ error: "Azure OpenAI nao configurado no backend (AZURE_OPENAI_ENDPOINT / AZURE_OPENAI_API_KEY)." }),
     }
   }
 
@@ -102,9 +94,6 @@ const handler: Handler = async (event) => {
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(API_KEY)
-    const model = genAI.getGenerativeModel({ model: MODEL })
-
     const defaultValue =
       total && valorTotalNumber ? Number((valorTotalNumber / total).toFixed(2)) : 1
 
@@ -121,17 +110,23 @@ const handler: Handler = async (event) => {
       valorTotal: valorTotalNumber,
     })
 
-    const parts = [{ text: userPrompt }, ...buildInlineParts(safeAttachments)]
+    const userContent: ChatPart[] = [
+      textPart(userPrompt),
+      ...safeAttachments.map((att) => imagePart(att.data, att.type || "image/jpeg")),
+    ]
 
-    const response = await model.generateContent({
-      contents: [{ role: "user", parts }],
-      generationConfig: {
-        temperature: 0.6,
-        maxOutputTokens: 1200,
-      },
-    })
+    const text = await callAzureChat(
+      [
+        {
+          role: "system",
+          content:
+            "Voce e o motor pedagogico do AvaliaPro. Gera avaliacoes escolares em portugues do Brasil e responde sempre em JSON puro, sem markdown.",
+        },
+        { role: "user", content: userContent },
+      ],
+      { maxCompletionTokens: MAX_COMPLETION_TOKENS }
+    )
 
-    const text = response.response.text()
     const parsed = parseQuestions(text, defaultValue, total)
 
     return {
@@ -140,7 +135,7 @@ const handler: Handler = async (event) => {
       body: JSON.stringify({ questoes: parsed }),
     }
   } catch (error: any) {
-    console.error("[generate-questions]", error)
+    console.error("[generate-questions]", error?.message || error)
     const message = error?.message || "Falha ao gerar questoes."
     const status = Number(error?.status) || 500
     return {
@@ -200,17 +195,6 @@ function buildPrompt(args: PromptArgs): string {
     .join("\n")
 }
 
-function buildInlineParts(attList: Attachment[]) {
-  return attList
-    .filter((att) => att.data)
-    .map((att) => ({
-      inlineData: {
-        data: att.data,
-        mimeType: att.type || "application/octet-stream",
-      },
-    }))
-}
-
 function parseQuestions(text: string, defaultValue: number, quantidade: number) {
   const jsonString = extractJson(text)
   const raw = JSON.parse(jsonString)
@@ -268,11 +252,4 @@ function normalizeQuestion(value: any, index: number, defaultValue: number) {
     resposta_correta: String(resposta || "").trim(),
     valor,
   }
-}
-
-function sanitizeModel(raw: string): string {
-  const clean = (raw || "").replace(/^models\//i, "").trim()
-  const match = clean.match(/(gemini[-\w\.]+)/i)
-  if (match && match[1]) return match[1]
-  return "gemini-2.0-flash"
 }
