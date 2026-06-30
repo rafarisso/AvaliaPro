@@ -6,7 +6,13 @@ import { getSupabase } from "../../services/supabaseClient"
 import { corrigirSubmissao } from "../../services/correcao"
 
 type Aluno = { id: string; nome: string; matricula: string | null }
-type SubmissaoView = { id: string; status: string; nota_final: number | null }
+type SubmissaoView = {
+  id: string
+  status: string
+  nota_final: number | null
+  revisado: boolean
+  imagens_urls: string[]
+}
 type RespostaDetalhe = {
   id: string
   resposta_extraida: string | null
@@ -20,6 +26,7 @@ type RespostaDetalhe = {
 const BUCKET = "provas-escaneadas"
 const MAX_FILES = 8
 const MAX_BYTES = 5 * 1024 * 1024
+const CONFIANCA_BAIXA = 0.6
 
 export default function CorrecaoPage() {
   const { aplicacaoId = "" } = useParams()
@@ -33,7 +40,9 @@ export default function CorrecaoPage() {
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [subByAluno, setSubByAluno] = useState<Record<string, SubmissaoView>>({})
   const [detalhes, setDetalhes] = useState<Record<string, RespostaDetalhe[]>>({})
+  const [fotos, setFotos] = useState<Record<string, string[]>>({})
   const [expandido, setExpandido] = useState<string | null>(null)
+  const [salvandoRev, setSalvandoRev] = useState<Record<string, boolean>>({})
 
   const [filesByAluno, setFilesByAluno] = useState<Record<string, File[]>>({})
   const [busy, setBusy] = useState<Record<string, string>>({})
@@ -73,7 +82,7 @@ export default function CorrecaoPage() {
         .order("nome", { ascending: true }),
       supabase
         .from("submissoes")
-        .select("id, aluno_id, status, nota_final, criado_em")
+        .select("id, aluno_id, status, nota_final, revisado, imagens_urls, criado_em")
         .eq("aplicacao_id", aplicacaoId)
         .order("criado_em", { ascending: false }),
     ])
@@ -84,11 +93,16 @@ export default function CorrecaoPage() {
 
     setAlunos((al.data || []) as Aluno[])
 
-    // mantém a submissão mais recente por aluno
     const map: Record<string, SubmissaoView> = {}
     for (const s of (subs.data || []) as any[]) {
       if (s.aluno_id && !map[s.aluno_id]) {
-        map[s.aluno_id] = { id: s.id, status: s.status, nota_final: s.nota_final }
+        map[s.aluno_id] = {
+          id: s.id,
+          status: s.status,
+          nota_final: s.nota_final,
+          revisado: Boolean(s.revisado),
+          imagens_urls: Array.isArray(s.imagens_urls) ? s.imagens_urls : [],
+        }
       }
     }
     setSubByAluno(map)
@@ -111,7 +125,6 @@ export default function CorrecaoPage() {
     if (!user?.id) return setErro("Sessão expirada. Faça login novamente.")
 
     try {
-      // 1. upload das imagens para o Storage (pasta do professor)
       setBusy((p) => ({ ...p, [aluno.id]: "Enviando imagens..." }))
       const paths: string[] = []
       for (let i = 0; i < files.length; i++) {
@@ -125,7 +138,6 @@ export default function CorrecaoPage() {
         paths.push(path)
       }
 
-      // 2. cria a submissão
       setBusy((p) => ({ ...p, [aluno.id]: "Registrando submissão..." }))
       const { data: sub, error: subErr } = await supabase
         .from("submissoes")
@@ -134,13 +146,18 @@ export default function CorrecaoPage() {
         .single()
       if (subErr) throw subErr
 
-      // 3. chama a correção (Gemini Vision)
       setBusy((p) => ({ ...p, [aluno.id]: "Corrigindo com IA..." }))
       const result = await corrigirSubmissao((sub as any).id)
 
       setSubByAluno((prev) => ({
         ...prev,
-        [aluno.id]: { id: (sub as any).id, status: "corrigida", nota_final: result.nota_final },
+        [aluno.id]: {
+          id: (sub as any).id,
+          status: "corrigida",
+          nota_final: result.nota_final,
+          revisado: false,
+          imagens_urls: paths,
+        },
       }))
       setFilesByAluno((prev) => ({ ...prev, [aluno.id]: [] }))
     } catch (e: any) {
@@ -161,18 +178,87 @@ export default function CorrecaoPage() {
       return
     }
     setExpandido(sub.id)
-    if (detalhes[sub.id]) return
-    const { data, error } = await supabase
-      .from("respostas_aluno")
-      .select(
-        "id, resposta_extraida, correta, pontos_obtidos, confianca, feedback_ia, questao:questoes(ordem, enunciado, tipo, valor, resposta_correta)"
+    if (!detalhes[sub.id]) {
+      const { data, error } = await supabase
+        .from("respostas_aluno")
+        .select(
+          "id, resposta_extraida, correta, pontos_obtidos, confianca, feedback_ia, questao:questoes(ordem, enunciado, tipo, valor, resposta_correta)"
+        )
+        .eq("submissao_id", sub.id)
+      if (error) return setErro(error.message)
+      const lista = ((data || []) as unknown as RespostaDetalhe[]).sort(
+        (a, b) => (a.questao?.ordem ?? 0) - (b.questao?.ordem ?? 0)
       )
-      .eq("submissao_id", sub.id)
-    if (error) return setErro(error.message)
-    const lista = ((data || []) as unknown as RespostaDetalhe[]).sort(
-      (a, b) => (a.questao?.ordem ?? 0) - (b.questao?.ordem ?? 0)
-    )
-    setDetalhes((prev) => ({ ...prev, [sub.id]: lista }))
+      setDetalhes((prev) => ({ ...prev, [sub.id]: lista }))
+    }
+    if (!fotos[sub.id]) void carregarFotos(sub)
+  }
+
+  async function carregarFotos(sub: SubmissaoView) {
+    const urls: string[] = []
+    for (const ref of sub.imagens_urls) {
+      const path = ref.replace(new RegExp(`^${BUCKET}/`), "")
+      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600)
+      if (data?.signedUrl) urls.push(data.signedUrl)
+    }
+    setFotos((prev) => ({ ...prev, [sub.id]: urls }))
+  }
+
+  function updateResposta(subId: string, idx: number, patch: Partial<RespostaDetalhe>) {
+    setDetalhes((prev) => {
+      const lista = [...(prev[subId] || [])]
+      lista[idx] = { ...lista[idx], ...patch }
+      return { ...prev, [subId]: lista }
+    })
+  }
+
+  async function salvarRevisao(aluno: Aluno, sub: SubmissaoView) {
+    const lista = detalhes[sub.id] || []
+    if (!lista.length) return
+    setErro(null)
+    setSalvandoRev((p) => ({ ...p, [sub.id]: true }))
+    try {
+      for (const r of lista) {
+        const maxValor = Number(r.questao?.valor) || 0
+        const pontos = Math.max(0, Math.min(Number(r.pontos_obtidos) || 0, maxValor))
+        const { error } = await supabase
+          .from("respostas_aluno")
+          .update({
+            resposta_extraida: r.resposta_extraida ?? "",
+            correta: Boolean(r.correta),
+            pontos_obtidos: pontos,
+          })
+          .eq("id", r.id)
+        if (error) throw error
+      }
+
+      const nota = round2(
+        lista.reduce((acc, r) => {
+          const maxValor = Number(r.questao?.valor) || 0
+          return acc + Math.max(0, Math.min(Number(r.pontos_obtidos) || 0, maxValor))
+        }, 0)
+      )
+
+      const { error: subErr } = await supabase
+        .from("submissoes")
+        .update({ nota_final: nota, revisado: true })
+        .eq("id", sub.id)
+      if (subErr) throw subErr
+
+      setSubByAluno((prev) => ({
+        ...prev,
+        [aluno.id]: { ...prev[aluno.id], nota_final: nota, revisado: true },
+      }))
+    } catch (e: any) {
+      console.error("[revisao]", e)
+      setErro(e?.message ?? "Não foi possível salvar a revisão.")
+    } finally {
+      setSalvandoRev((p) => {
+        const cp = { ...p }
+        delete cp[sub.id]
+        return cp
+      })
+    }
   }
 
   function refazer(alunoId: string) {
@@ -226,9 +312,7 @@ export default function CorrecaoPage() {
                 {corrigidas} de {alunos.length} aluno(s) corrigido(s)
               </span>
               <div className="flex items-center gap-3">
-                {valorTotal != null && (
-                  <span className="text-sm text-gray-500">Valor da prova: {valorTotal}</span>
-                )}
+                {valorTotal != null && <span className="text-sm text-gray-500">Valor da prova: {valorTotal}</span>}
                 {corrigidas > 0 && (
                   <button
                     type="button"
@@ -256,7 +340,13 @@ export default function CorrecaoPage() {
 
                       {sub ? (
                         <div className="flex items-center gap-3">
-                          <StatusBadge status={sub.status} />
+                          {sub.revisado ? (
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                              ✓ Revisada
+                            </span>
+                          ) : (
+                            <StatusBadge status={sub.status} />
+                          )}
                           {sub.status === "corrigida" && (
                             <span className="text-lg font-semibold text-gray-900">
                               {fmt(sub.nota_final)}
@@ -268,7 +358,7 @@ export default function CorrecaoPage() {
                             onClick={() => verDetalhes(sub)}
                             className="text-xs font-medium text-blue-600 hover:underline"
                           >
-                            {expandido === sub.id ? "Ocultar" : "Ver detalhes"}
+                            {expandido === sub.id ? "Ocultar" : "Revisar"}
                           </button>
                           <button
                             type="button"
@@ -285,6 +375,7 @@ export default function CorrecaoPage() {
                             <input
                               type="file"
                               accept="image/*"
+                              capture="environment"
                               multiple
                               className="hidden"
                               onChange={(e) => onPickFiles(aluno.id, e)}
@@ -302,46 +393,131 @@ export default function CorrecaoPage() {
                       )}
                     </div>
 
-                    {/* Detalhes por questão */}
+                    {/* Revisão da correção */}
                     {sub && expandido === sub.id && (
-                      <div className="mt-4 border-t pt-4">
+                      <div className="mt-4 space-y-4 border-t pt-4">
+                        {/* Fotos da prova */}
+                        {fotos[sub.id]?.length ? (
+                          <div className="flex flex-wrap gap-2">
+                            {fotos[sub.id].map((url, i) => (
+                              <a key={i} href={url} target="_blank" rel="noreferrer" className="block">
+                                <img
+                                  src={url}
+                                  alt={`Prova ${i + 1}`}
+                                  className="h-28 w-auto rounded-lg border object-cover hover:opacity-90"
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400">Carregando imagens…</p>
+                        )}
+
                         {!detalhes[sub.id] ? (
                           <p className="text-sm text-gray-500">Carregando correção…</p>
                         ) : detalhes[sub.id].length === 0 ? (
                           <p className="text-sm text-gray-500">Sem correção registrada para esta submissão.</p>
                         ) : (
-                          <ul className="space-y-2">
-                            {detalhes[sub.id].map((r) => (
-                              <li key={r.id} className="rounded-xl border p-3">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="text-sm font-medium text-gray-800">
-                                    {r.questao?.ordem}. {r.questao?.enunciado}
-                                  </div>
-                                  <span
-                                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                                      r.correta ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                                    }`}
-                                  >
-                                    {fmt(r.pontos_obtidos)}
-                                    {r.questao ? ` / ${r.questao.valor}` : ""}
-                                  </span>
-                                </div>
-                                <div className="mt-1 grid gap-1 text-xs text-gray-600 sm:grid-cols-2">
-                                  <div>
-                                    <span className="text-gray-400">Resposta do aluno:</span>{" "}
-                                    {r.resposta_extraida || "—"}
-                                  </div>
-                                  <div>
-                                    <span className="text-gray-400">Gabarito:</span>{" "}
-                                    {r.questao?.resposta_correta || "—"}
-                                  </div>
-                                </div>
-                                {r.feedback_ia && (
-                                  <div className="mt-1 text-xs italic text-gray-500">{r.feedback_ia}</div>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
+                          <>
+                            <p className="text-xs text-gray-500">
+                              Revise a leitura da IA, ajuste os pontos se necessário e salve. Itens com leitura
+                              incerta estão marcados.
+                            </p>
+                            <ul className="space-y-2">
+                              {detalhes[sub.id].map((r, idx) => {
+                                const baixa = (r.confianca ?? 1) < CONFIANCA_BAIXA
+                                const maxValor = Number(r.questao?.valor) || 0
+                                return (
+                                  <li key={r.id} className="rounded-xl border p-3">
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="text-sm font-medium text-gray-800">
+                                        {r.questao?.ordem}. {r.questao?.enunciado}
+                                      </div>
+                                      {baixa && (
+                                        <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                                          IA incerta
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                      <label className="text-xs text-gray-500">
+                                        Resposta do aluno
+                                        <input
+                                          value={r.resposta_extraida ?? ""}
+                                          onChange={(e) =>
+                                            updateResposta(sub.id, idx, { resposta_extraida: e.target.value })
+                                          }
+                                          className="mt-1 w-full rounded-lg border px-2 py-1 text-sm text-gray-800"
+                                        />
+                                      </label>
+                                      <div className="text-xs text-gray-500">
+                                        Gabarito
+                                        <div className="mt-1 rounded-lg bg-gray-50 px-2 py-1 text-sm text-gray-700">
+                                          {r.questao?.resposta_correta || "—"}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="mt-2 flex flex-wrap items-center gap-4">
+                                      <label className="flex items-center gap-2 text-sm text-gray-700">
+                                        <span>Pontos</span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          max={maxValor}
+                                          step={0.5}
+                                          value={r.pontos_obtidos ?? 0}
+                                          onChange={(e) =>
+                                            updateResposta(sub.id, idx, {
+                                              pontos_obtidos: Number(e.target.value || 0),
+                                            })
+                                          }
+                                          className="w-20 rounded-lg border px-2 py-1 text-sm"
+                                        />
+                                        <span className="text-gray-400">/ {maxValor}</span>
+                                      </label>
+                                      <label className="flex items-center gap-2 text-sm text-gray-700">
+                                        <input
+                                          type="checkbox"
+                                          checked={Boolean(r.correta)}
+                                          onChange={(e) => updateResposta(sub.id, idx, { correta: e.target.checked })}
+                                        />
+                                        Correta
+                                      </label>
+                                    </div>
+
+                                    {r.feedback_ia && (
+                                      <div className="mt-1 text-xs italic text-gray-500">{r.feedback_ia}</div>
+                                    )}
+                                  </li>
+                                )
+                              })}
+                            </ul>
+
+                            <div className="flex items-center justify-end gap-3">
+                              <span className="text-sm text-gray-600">
+                                Nota:{" "}
+                                <strong>
+                                  {fmt(
+                                    (detalhes[sub.id] || []).reduce((acc, r) => {
+                                      const mv = Number(r.questao?.valor) || 0
+                                      return acc + Math.max(0, Math.min(Number(r.pontos_obtidos) || 0, mv))
+                                    }, 0)
+                                  )}
+                                </strong>
+                                {valorTotal != null ? ` / ${valorTotal}` : ""}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={Boolean(salvandoRev[sub.id])}
+                                onClick={() => salvarRevisao(aluno, sub)}
+                                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
+                              >
+                                {salvandoRev[sub.id] ? "Salvando..." : "Salvar revisão"}
+                              </button>
+                            </div>
+                          </>
                         )}
                       </div>
                     )}
@@ -372,12 +548,18 @@ function fmt(n: number | null | undefined): string {
   return String(Math.round(Number(n) * 100) / 100)
 }
 
+function round2(n: number): number {
+  return Math.round((Number(n) || 0) * 100) / 100
+}
+
 function slug(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9.]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60) || "foto.jpg"
+  return (
+    name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9.]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "foto.jpg"
+  )
 }
