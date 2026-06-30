@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../../../hooks/useAuth"
 import { useToast } from "../../../hooks/useToast"
+import LoadingOverlay from "../../components/LoadingOverlay"
 import { getSupabase } from "../../services/supabaseClient"
 import { generateQuestionsWithAI, type GeneratedQuestion } from "../../services/ai"
 import {
@@ -404,6 +405,7 @@ export default function NovaAvaliacao() {
   }
 return (
     <div className="mx-auto max-w-6xl space-y-6 p-4">
+      <LoadingOverlay show={loadingIA} message="Gerando questões com IA…" />
       <div className="space-y-1">
         <div className="flex items-center gap-3">
           <button

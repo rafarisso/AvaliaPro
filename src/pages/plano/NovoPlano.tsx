@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import LoadingOverlay from "../../components/LoadingOverlay"
 
 type PlanRequest = {
   tema: string
@@ -61,6 +62,7 @@ export default function NovoPlano() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
+      <LoadingOverlay show={isLoading} message="Gerando plano de aula…" />
       <div className="mx-auto max-w-4xl space-y-6">
         <div className="flex items-center gap-3">
           <button

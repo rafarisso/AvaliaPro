@@ -1,6 +1,7 @@
 import { useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import PptxGenJS from "pptxgenjs"
+import LoadingOverlay from "../../components/LoadingOverlay"
 import { generateSlides, type Slide } from "../../services/slides"
 
 type Attachment = { name: string; type: string; data: string }
@@ -144,6 +145,7 @@ export default function ModelosPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4">
+      <LoadingOverlay show={loading} message="Gerando slides com IA…" />
       <div className="space-y-1">
         <div className="flex items-center gap-3">
           <button
