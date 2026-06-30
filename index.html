@@ -15,56 +15,9 @@
       rel="stylesheet"
     />
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="/index.css" />
     <link rel="icon" href="/AvaliaPro_logo.svg" />
 
-    <!-- Tailwind via CDN (ok em protótipo, só gera warning no console) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ["Poppins", "sans-serif"],
-            },
-            colors: {
-              primary: { DEFAULT: "#3366FF", dark: "#2952CC" },
-              secondary: "#00A3FF",
-              light: "#F5F5F5",
-            },
-          },
-        },
-      }
-    </script>
-
-    <!-- Estilos adicionais -->
-    <style type="text/tailwindcss">
-      body {
-        @apply bg-light text-gray-800 transition-colors duration-300;
-      }
-      @layer utilities {
-        .prose {
-          color: #374151;
-          max-width: 65ch;
-        }
-        .prose h1,
-        .prose h2,
-        .prose h3,
-        .prose h4,
-        .prose strong {
-          font-weight: 600;
-          color: #1f2937;
-        }
-        .prose p {
-          margin-top: 1.25em;
-          margin-bottom: 1.25em;
-        }
-      }
-      .dark body {
-        @apply bg-gray-900 text-gray-200;
-      }
-    </style>
+    <!-- Tailwind agora é compilado no build (PostCSS) e importado em index.tsx -->
 
     <!-- env.js ANTES do bundle -->
     <script src="/env.js"></script>

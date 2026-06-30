@@ -1,8 +1,40 @@
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; font-family: system-ui, Arial, sans-serif; color: #111; background: #fff; }
-a { color: #0a58ca; text-decoration: none; }
-a:hover { text-decoration: underline; }
-button { padding: 8px 12px; border: 1px solid #ccc; background: #f7f7f7; cursor: pointer; border-radius: 6px; }
-input { padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
-h1, h2 { margin: 0 0 8px; }
-main { min-height: 60vh; }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Globais do projeto */
+* {
+  box-sizing: border-box;
+}
+
+@layer base {
+  body {
+    @apply bg-light text-gray-800 transition-colors duration-300;
+    margin: 0;
+    padding: 0;
+    font-family: "Poppins", system-ui, Arial, sans-serif;
+  }
+
+  .dark body {
+    @apply bg-gray-900 text-gray-200;
+  }
+}
+
+@layer utilities {
+  .prose {
+    color: #374151;
+    max-width: 65ch;
+  }
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose strong {
+    font-weight: 600;
+    color: #1f2937;
+  }
+  .prose p {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+  }
+}
