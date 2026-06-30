@@ -31,207 +31,162 @@ export type AssessmentKeyForPdf = {
   }[]
 }
 
+const MARGIN = 48
+type Style = "normal" | "bold" | "italic"
+
 /**
- * Gera um PDF profissional, sem data e sem marca d’água.
- * Layout limpo, cabeçalho elegante e espaçamento adequado.
+ * "Escritor" sobre o jsPDF que SEMPRE quebra linha dentro da margem e
+ * pagina automaticamente — evita o texto sair cortado na borda direita.
  */
+function createWriter() {
+  const doc = new jsPDF({ unit: "pt", format: "a4" })
+  const pageW = doc.internal.pageSize.getWidth()
+  const pageH = doc.internal.pageSize.getHeight()
+  const right = pageW - MARGIN
+  const bottom = pageH - MARGIN
+  const state = { y: MARGIN + 6 }
+
+  const ensure = (h: number) => {
+    if (state.y + h > bottom) {
+      doc.addPage()
+      state.y = MARGIN + 6
+    }
+  }
+
+  const write = (
+    str: string,
+    opts: { x?: number; size?: number; style?: Style; lineH?: number; gapAfter?: number; color?: number } = {}
+  ) => {
+    const x = opts.x ?? MARGIN
+    const size = opts.size ?? 11
+    const lineH = opts.lineH ?? size * 1.4
+    doc.setFont("helvetica", opts.style ?? "normal")
+    doc.setFontSize(size)
+    doc.setTextColor(opts.color ?? 25)
+    const lines = doc.splitTextToSize(str, right - x) as string[]
+    for (const line of lines) {
+      ensure(lineH)
+      doc.text(line, x, state.y)
+      state.y += lineH
+    }
+    if (opts.gapAfter) state.y += opts.gapAfter
+  }
+
+  // Cabeçalho em duas colunas (campos curtos)
+  const meta = (leftLines: string[], rightLines: string[]) => {
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(11)
+    doc.setTextColor(60)
+    const startY = state.y
+    const colRightX = MARGIN + (right - MARGIN) / 2 + 8
+    const lineH = 16
+    leftLines.forEach((l, i) => doc.text(l, MARGIN, startY + i * lineH))
+    rightLines.forEach((l, i) => doc.text(l, colRightX, startY + i * lineH))
+    const rows = Math.max(leftLines.length, rightLines.length)
+    state.y = startY + rows * lineH + 4
+  }
+
+  const hr = (gapAfter = 14) => {
+    ensure(gapAfter + 2)
+    doc.setDrawColor(200)
+    doc.line(MARGIN, state.y, right, state.y)
+    state.y += gapAfter
+  }
+
+  // Linhas em branco para a resposta dissertativa
+  const answerLines = (n: number, x: number) => {
+    for (let i = 0; i < n; i++) {
+      ensure(22)
+      doc.setDrawColor(215)
+      doc.line(x, state.y, right, state.y)
+      state.y += 22
+    }
+  }
+
+  const gap = (h: number) => {
+    state.y += h
+  }
+
+  const footer = () => {
+    const total = doc.getNumberOfPages()
+    for (let p = 1; p <= total; p++) {
+      doc.setPage(p)
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(9)
+      doc.setTextColor(150)
+      doc.text(`Página ${p} de ${total}`, pageW / 2, pageH - 24, { align: "center" })
+    }
+  }
+
+  return { doc, write, meta, hr, answerLines, gap, footer }
+}
+
 export function exportAssessmentToPdf(data: AssessmentForPdf) {
   if (!data.questoes.length) {
     throw new Error("Sem questões para exportar.")
   }
 
-  const doc = new jsPDF({
-    unit: "pt",
-    format: "a4",
-  })
+  const w = createWriter()
 
-  const marginLeft = 40
-  let cursorY = 50
-
-  // ------------------------------
-  // TÍTULO
-  // ------------------------------
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(18)
-  doc.text(data.titulo || "Avaliação", marginLeft, cursorY)
-  cursorY += 28
-
-  // ------------------------------
-  // CABEÇALHO ORGANIZADO EM BLOCO
-  // ------------------------------
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(11)
-
-  const headerLeft = [
-    `Disciplina: ${data.disciplina}`,
-    `Série/Ano: ${data.serie}`,
-  ]
-
-  const headerRight = [
-    `Nível: ${data.nivel}`,
-    `Tipo: ${data.tipo}`,
-  ]
-
-  const rightX = 320
-
-  headerLeft.forEach((line, index) => {
-    doc.text(line, marginLeft, cursorY + index * 14)
-  })
-
-  headerRight.forEach((line, index) => {
-    doc.text(line, rightX, cursorY + index * 14)
-  })
-
-  cursorY += 40
-
-  // Nome do aluno
-  doc.text(`Nome do aluno: ${"_".repeat(50)}`, marginLeft, cursorY)
-  cursorY += 18
-
-  // Linha divisóriaória
-  doc.setDrawColor(180)
-  doc.line(marginLeft, cursorY, 555, cursorY)
-  cursorY += 25
+  w.write(data.titulo || "Avaliação", { size: 18, style: "bold", gapAfter: 12 })
+  w.meta(
+    [`Disciplina: ${data.disciplina}`, `Série/Ano: ${data.serie}`],
+    [`Nível: ${data.nivel}`, `Tipo: ${data.tipo}`]
+  )
+  w.gap(6)
+  w.write(`Nome do aluno: ${"_".repeat(42)}`, { size: 11, color: 60 })
+  w.write(`Turma: ${"_".repeat(18)}      Data: ____ / ____ / ________`, { size: 11, color: 60, gapAfter: 6 })
+  w.hr()
 
   if (data.enunciadoGeral) {
-    doc.setFont("helvetica", "italic")
-    doc.setFontSize(11)
-    const splitIntro = doc.splitTextToSize(data.enunciadoGeral, 520)
-    doc.text(splitIntro, marginLeft, cursorY)
-    cursorY += splitIntro.length * 16 + 12
-    doc.setFont("helvetica", "normal")
-    doc.setFontSize(12)
+    w.write(data.enunciadoGeral, { size: 11, style: "italic", color: 70, gapAfter: 10 })
   }
 
-  // ------------------------------
-  // TÍTULO DAS QUESTÕES
-  // ------------------------------
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(14)
-  doc.text("Questões", marginLeft, cursorY)
-  cursorY += 24
+  w.write("Questões", { size: 14, style: "bold", gapAfter: 10 })
 
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(12)
-
-  // ------------------------------
-  // RENDERIZAÇÃO DAS QUESTÕES
-  // ------------------------------
   data.questoes.forEach((q, idx) => {
-    if (cursorY > 760) {
-      doc.addPage()
-      cursorY = 50
-    }
-
-    const enunciado = `${idx + 1}. ${q.enunciado}  (${q.valor} ponto${q.valor !== 1 ? "s" : ""})`
-    const splitEnunciado = doc.splitTextToSize(enunciado, 520)
-
-    doc.text(splitEnunciado, marginLeft, cursorY)
-    cursorY += splitEnunciado.length * 16 + 8
+    w.gap(2)
+    const pts = `(${q.valor} ponto${q.valor !== 1 ? "s" : ""})`
+    w.write(`${idx + 1}. ${q.enunciado}  ${pts}`, { size: 12, style: "bold", gapAfter: 4 })
 
     if (q.tipo === "objetiva") {
-      // múltipla escolha
-      const alternativas = q.alternativas?.length
-        ? q.alternativas
-        : ["A)", "B)", "C)", "D)"]
-
+      const alternativas = q.alternativas?.length ? q.alternativas : ["", "", "", ""]
       alternativas.forEach((alt, altIdx) => {
-        if (cursorY > 760) {
-          doc.addPage()
-          cursorY = 50
-        }
-
         const letra = String.fromCharCode(65 + altIdx)
-        const cleanedAlt = cleanAlternative(alt)
-        doc.text(`${letra}) ${cleanedAlt}`, marginLeft + 20, cursorY)
-        cursorY += 16
+        w.write(`${letra}) ${cleanAlternative(alt)}`, { x: MARGIN + 18, size: 11 })
       })
+      w.gap(12)
     } else {
-      // discursiva — linhas de resposta
-      const linhas = 6
-      for (let i = 0; i < linhas; i++) {
-        if (cursorY > 760) {
-          doc.addPage()
-          cursorY = 50
-        }
-        doc.line(marginLeft + 10, cursorY, 545, cursorY)
-        cursorY += 22
-      }
+      w.gap(4)
+      w.answerLines(6, MARGIN + 10)
+      w.gap(8)
     }
-
-    cursorY += 18
   })
 
-  // ------------------------------
-  // SALVAR ARQUIVO
-  // ------------------------------
-  doc.save(`${data.titulo || "avaliacao"}.pdf`)
+  w.footer()
+  w.doc.save(`${data.titulo || "avaliacao"}.pdf`)
 }
 
 export function exportAnswerKeyToPdf(data: AssessmentKeyForPdf) {
   if (!data.questoes.length) {
-    throw new Error("Sem questoes para exportar.")
+    throw new Error("Sem questões para exportar.")
   }
 
-  const doc = new jsPDF({
-    unit: "pt",
-    format: "a4",
-  })
+  const w = createWriter()
 
-  const marginLeft = 40
-  let cursorY = 50
+  w.write(`${data.titulo || "Avaliação"} — Gabarito`, { size: 18, style: "bold", gapAfter: 12 })
+  w.meta(
+    [`Disciplina: ${data.disciplina}`, `Série/Ano: ${data.serie}`],
+    [`Nível: ${data.nivel}`, `Tipo: ${data.tipo}`]
+  )
+  w.gap(6)
+  w.hr()
 
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(18)
-  doc.text(`${data.titulo || "Avaliação"} - Gabarito`, marginLeft, cursorY)
-  cursorY += 28
-
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(11)
-
-  const headerLeft = [
-    `Disciplina: ${data.disciplina}`,
-    `Série/Ano: ${data.serie}`,
-  ]
-
-  const headerRight = [
-    `Nível: ${data.nivel}`,
-    `Tipo: ${data.tipo}`,
-  ]
-
-  const rightX = 320
-
-  headerLeft.forEach((line, index) => {
-    doc.text(line, marginLeft, cursorY + index * 14)
-  })
-
-  headerRight.forEach((line, index) => {
-    doc.text(line, rightX, cursorY + index * 14)
-  })
-
-  cursorY += 40
-  doc.setDrawColor(180)
-  doc.line(marginLeft, cursorY, 555, cursorY)
-  cursorY += 25
-
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(14)
-  doc.text("Gabarito", marginLeft, cursorY)
-  cursorY += 24
-
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(12)
+  w.write("Gabarito", { size: 14, style: "bold", gapAfter: 10 })
 
   data.questoes.forEach((q, idx) => {
-    if (cursorY > 760) {
-      doc.addPage()
-      cursorY = 50
-    }
-
-    const enunciado = `${idx + 1}. ${q.enunciado}`
-    const splitEnunciado = doc.splitTextToSize(enunciado, 520)
-    doc.text(splitEnunciado, marginLeft, cursorY)
-    cursorY += splitEnunciado.length * 16 + 8
+    w.gap(2)
+    w.write(`${idx + 1}. ${q.enunciado}`, { size: 12, style: "bold", gapAfter: 4 })
 
     if (q.tipo === "objetiva") {
       const alternativas = q.alternativas ?? []
@@ -239,25 +194,26 @@ export function exportAnswerKeyToPdf(data: AssessmentKeyForPdf) {
       const idxCorreto = letra ? letra.charCodeAt(0) - 65 : -1
       const textoRaw = idxCorreto >= 0 && alternativas[idxCorreto] ? alternativas[idxCorreto] : ""
       const texto = cleanAlternative(textoRaw)
-      const label = letra ? `Alternativa correta: ${letra}${texto ? ` - ${texto}` : ""}` : "Alternativa correta: -"
-      doc.text(label, marginLeft + 10, cursorY)
-      cursorY += 18
+      const label = letra
+        ? `Alternativa correta: ${letra}${texto ? ` — ${texto}` : ""}`
+        : "Alternativa correta: —"
+      w.write(label, { x: MARGIN + 10, size: 11, color: 30 })
     } else {
       const resp = q.resposta_correta?.trim() || "Resposta não informada."
-      const splitResp = doc.splitTextToSize(`Resposta esperada: ${resp}`, 520)
-      doc.text(splitResp, marginLeft + 10, cursorY)
-      cursorY += splitResp.length * 16
+      w.write(`Resposta esperada: ${resp}`, { x: MARGIN + 10, size: 11, color: 30 })
     }
 
-    doc.setFontSize(10)
-    doc.text(`Valor: ${q.valor} ponto(s)`, marginLeft + 10, cursorY + 10)
-    doc.setFontSize(12)
-    cursorY += 24
+    w.write(`Valor: ${q.valor} ponto${q.valor !== 1 ? "s" : ""}`, {
+      x: MARGIN + 10,
+      size: 9,
+      color: 120,
+      gapAfter: 12,
+    })
   })
 
-  doc.save(`${data.titulo || "avaliacao"}-gabarito.pdf`)
+  w.footer()
+  w.doc.save(`${data.titulo || "avaliacao"}-gabarito.pdf`)
 }
-
 
 function cleanAlternative(value: string): string {
   if (!value) return ""
