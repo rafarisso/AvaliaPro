@@ -16,6 +16,7 @@ import NovoPlano from "./src/pages/plano/NovoPlano"
 import TurmasPage from "./src/pages/turmas/TurmasPage"
 import AplicacoesPage from "./src/pages/aplicacoes/AplicacoesPage"
 import CorrecaoPage from "./src/pages/correcao/CorrecaoPage"
+import DesempenhoPage from "./src/pages/desempenho/DesempenhoPage"
 import TeacherBoost from "./src/pages/TeacherBoost"
 
 function AppRoutes() {
@@ -73,6 +74,14 @@ function AppRoutes() {
         element={
           <RequireAuth>
             <CorrecaoPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/desempenho/:aplicacaoId"
+        element={
+          <RequireAuth>
+            <DesempenhoPage />
           </RequireAuth>
         }
       />

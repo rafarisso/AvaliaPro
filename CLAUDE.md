@@ -89,7 +89,7 @@ questões com IA e exportação PDF continuam iguais.
    - Turmas/alunos (`src/pages/turmas/TurmasPage.tsx`, `/turmas`)
    - Aplicar avaliação (`src/pages/aplicacoes/AplicacoesPage.tsx`, `/aplicacoes`) → cria `aplicacao`
    - Correção (`src/pages/correcao/CorrecaoPage.tsx`, `/correcao/:aplicacaoId`): por aluno, upload de foto → Storage `{uid}/{aplicacao}/{aluno}/` → cria `submissao` → chama `corrigir-prova` (via `src/services/correcao.ts`) → mostra nota e resultado por questão.
-6. ⬜ Dashboard de desempenho por turma/aluno
+6. ✅ Dashboard de desempenho (`src/pages/desempenho/DesempenhoPage.tsx`, `/desempenho/:aplicacaoId`): média da turma, maior/menor nota, **taxa de acerto por questão** e nota por aluno. Acessível pelo botão "Desempenho" em AplicacoesPage e link na CorrecaoPage.
 
 > **Para testar o OCR de verdade é preciso DEPLOY (push no `main`).** A função
 > `corrigir-prova` só existe no Netlify após o push, e a `SUPABASE_SERVICE_ROLE_KEY`

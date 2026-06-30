@@ -221,13 +221,24 @@ export default function CorrecaoPage() {
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white p-4 shadow">
               <span className="text-sm text-gray-600">
                 {corrigidas} de {alunos.length} aluno(s) corrigido(s)
               </span>
-              {valorTotal != null && (
-                <span className="text-sm text-gray-500">Valor da prova: {valorTotal}</span>
-              )}
+              <div className="flex items-center gap-3">
+                {valorTotal != null && (
+                  <span className="text-sm text-gray-500">Valor da prova: {valorTotal}</span>
+                )}
+                {corrigidas > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/desempenho/${aplicacaoId}`)}
+                    className="rounded-xl border px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Ver desempenho →
+                  </button>
+                )}
+              </div>
             </div>
 
             <ul className="space-y-3">

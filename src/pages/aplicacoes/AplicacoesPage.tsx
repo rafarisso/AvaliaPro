@@ -242,6 +242,13 @@ export default function AplicacoesPage() {
                           </button>
                           <button
                             type="button"
+                            onClick={() => navigate(`/desempenho/${ap.id}`)}
+                            className="rounded-xl border px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                          >
+                            Desempenho
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => excluirAplicacao(ap)}
                             className="text-xs text-red-600 hover:underline"
                           >
