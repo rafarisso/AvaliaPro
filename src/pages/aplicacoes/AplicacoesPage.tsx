@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
 import Header from "../../components/Header"
 import { useAuth } from "../../../hooks/useAuth"
+import { useToast } from "../../../hooks/useToast"
 import { getSupabase } from "../../services/supabaseClient"
 
 type AvaliacaoOpt = { id: string; titulo: string; disciplina: string | null; serie: string | null }
@@ -20,6 +21,7 @@ const APLICACAO_SELECT =
 export default function AplicacoesPage() {
   const supabase = getSupabase()
   const { user } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
 
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoOpt[]>([])
@@ -89,7 +91,7 @@ export default function AplicacoesPage() {
     setAvaliacaoId("")
     setTurmaId("")
     setDataAplicacao("")
-    setMensagem("Avaliação aplicada. Agora você já pode corrigir as provas dos alunos.")
+    showToast("Avaliação aplicada. Já pode corrigir as provas dos alunos.", "success")
   }
 
   async function excluirAplicacao(ap: Aplicacao) {

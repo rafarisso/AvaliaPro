@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
 import Header from "../../components/Header"
 import { useAuth } from "../../../hooks/useAuth"
+import { useToast } from "../../../hooks/useToast"
 import { getSupabase } from "../../services/supabaseClient"
 
 type Turma = { id: string; nome: string; serie: string | null; criado_em: string }
@@ -10,6 +11,7 @@ type Aluno = { id: string; nome: string; matricula: string | null; turma_id: str
 export default function TurmasPage() {
   const supabase = getSupabase()
   const { user } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
 
   const [turmas, setTurmas] = useState<Turma[]>([])
@@ -20,6 +22,9 @@ export default function TurmasPage() {
   const [novaTurmaSerie, setNovaTurmaSerie] = useState("")
   const [novoAlunoNome, setNovoAlunoNome] = useState("")
   const [novoAlunoMatricula, setNovoAlunoMatricula] = useState("")
+  const [importOpen, setImportOpen] = useState(false)
+  const [importText, setImportText] = useState("")
+  const [importando, setImportando] = useState(false)
 
   const [loading, setLoading] = useState(false)
   const [salvando, setSalvando] = useState(false)
@@ -82,7 +87,7 @@ export default function TurmasPage() {
     setNovaTurmaNome("")
     setNovaTurmaSerie("")
     setTurmas((prev) => [data as Turma, ...prev])
-    setMensagem("Turma criada.")
+    showToast("Turma criada.", "success")
   }
 
   async function excluirTurma(t: Turma) {
@@ -120,6 +125,44 @@ export default function TurmasPage() {
     setNovoAlunoNome("")
     setNovoAlunoMatricula("")
     setAlunos((prev) => [...prev, data as Aluno].sort((a, b) => a.nome.localeCompare(b.nome)))
+    showToast("Aluno adicionado.", "success")
+  }
+
+  async function importarAlunos(e: FormEvent) {
+    e.preventDefault()
+    setErro(null)
+    if (!selecionada) return
+    const novos = importText
+      .split(/\r?\n/)
+      .map((linha) => linha.trim())
+      .filter(Boolean)
+      .map((linha) => {
+        const partes = linha.split(/[\t,;]/).map((p) => p.trim())
+        return { nome: partes[0], matricula: partes[1] || null, turma_id: selecionada.id }
+      })
+      .filter((a) => a.nome)
+
+    if (!novos.length) return setErro("Cole ao menos um nome (um por linha).")
+
+    setImportando(true)
+    const { data, error } = await supabase
+      .from("alunos")
+      .insert(novos)
+      .select("id, nome, matricula, turma_id")
+    setImportando(false)
+    if (error) {
+      return setErro(
+        error.message.includes("duplicate")
+          ? "Há matrículas repetidas nesta turma. Remova as duplicadas e tente de novo."
+          : error.message
+      )
+    }
+
+    const inseridos = (data || []) as Aluno[]
+    setAlunos((prev) => [...prev, ...inseridos].sort((a, b) => a.nome.localeCompare(b.nome)))
+    setImportText("")
+    setImportOpen(false)
+    showToast(`${inseridos.length} aluno(s) importado(s).`, "success")
   }
 
   async function excluirAluno(id: string) {
@@ -235,7 +278,36 @@ export default function TurmasPage() {
                       <h2 className="text-lg font-semibold text-gray-900">Alunos · {selecionada.nome}</h2>
                       <p className="text-sm text-gray-500">{alunos.length} aluno(s)</p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setImportOpen((v) => !v)}
+                      className="rounded-xl border px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      {importOpen ? "Fechar" : "Importar lista"}
+                    </button>
                   </div>
+
+                  {importOpen && (
+                    <form onSubmit={importarAlunos} className="space-y-2 rounded-xl border bg-gray-50 p-3">
+                      <p className="text-xs text-gray-500">
+                        Cole um aluno por linha. Opcional: <code>Nome, matrícula</code> (separe por vírgula, ponto-e-vírgula ou tab).
+                      </p>
+                      <textarea
+                        value={importText}
+                        onChange={(e) => setImportText(e.target.value)}
+                        rows={5}
+                        placeholder={"Ana Souza, 1001\nBruno Lima, 1002\nCarla Dias"}
+                        className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <button
+                        type="submit"
+                        disabled={importando}
+                        className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
+                      >
+                        {importando ? "Importando..." : "Importar alunos"}
+                      </button>
+                    </form>
+                  )}
 
                   <form onSubmit={criarAluno} className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
                     <input

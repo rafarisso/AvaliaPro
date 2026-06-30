@@ -2,6 +2,7 @@ import { useEffect, useState, type ChangeEvent } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import Header from "../../components/Header"
 import { useAuth } from "../../../hooks/useAuth"
+import { useToast } from "../../../hooks/useToast"
 import { getSupabase } from "../../services/supabaseClient"
 import { corrigirSubmissao } from "../../services/correcao"
 
@@ -32,6 +33,7 @@ export default function CorrecaoPage() {
   const { aplicacaoId = "" } = useParams()
   const supabase = getSupabase()
   const { user } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
 
   const [titulo, setTitulo] = useState("")
@@ -160,6 +162,7 @@ export default function CorrecaoPage() {
         },
       }))
       setFilesByAluno((prev) => ({ ...prev, [aluno.id]: [] }))
+      showToast(`Prova de ${aluno.nome} corrigida (nota ${fmt(result.nota_final)}).`, "success")
     } catch (e: any) {
       console.error("[correcao]", e)
       setErro(e?.message ?? "Falha ao corrigir a prova.")
@@ -249,6 +252,7 @@ export default function CorrecaoPage() {
         ...prev,
         [aluno.id]: { ...prev[aluno.id], nota_final: nota, revisado: true },
       }))
+      showToast("Revisão salva.", "success")
     } catch (e: any) {
       console.error("[revisao]", e)
       setErro(e?.message ?? "Não foi possível salvar a revisão.")

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../../../hooks/useAuth"
+import { useToast } from "../../../hooks/useToast"
 import { getSupabase } from "../../services/supabaseClient"
 import { generateQuestionsWithAI, type GeneratedQuestion } from "../../services/ai"
 import {
@@ -63,6 +64,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 export default function NovaAvaliacao() {
   const supabase = getSupabase()
   const { user } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
 
   const [nivel, setNivel] = useState<(typeof NIVEIS)[number]>("Ensino Médio")
@@ -288,6 +290,7 @@ export default function NovaAvaliacao() {
       if (questoesError) throw questoesError
 
       setMensagem("Avaliação salva com sucesso.")
+      showToast("Avaliação salva com sucesso.", "success")
     } catch (error: any) {
       console.error("[Salvar]", error)
       setErro(error?.message ?? "Não foi possível salvar a avaliação.")

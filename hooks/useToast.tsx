@@ -28,6 +28,25 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
  return (
    <ToastContext.Provider value={{ toasts, showToast, removeToast }}>
      {children}
+     <div className="fixed bottom-4 right-4 z-[60] flex max-w-sm flex-col gap-2">
+       {toasts.map((t) => (
+         <button
+           key={t.id}
+           type="button"
+           onClick={() => removeToast(t.id)}
+           className={
+             "rounded-xl px-4 py-3 text-left text-sm font-medium text-white shadow-lg transition " +
+             (t.type === 'success'
+               ? 'bg-emerald-600'
+               : t.type === 'error'
+               ? 'bg-red-600'
+               : 'bg-gray-800')
+           }
+         >
+           {t.message}
+         </button>
+       ))}
+     </div>
    </ToastContext.Provider>
  );
 };
