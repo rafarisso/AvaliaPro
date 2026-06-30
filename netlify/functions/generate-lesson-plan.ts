@@ -1,14 +1,30 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import type { Handler } from "@netlify/functions"
+import { callAzureChat, azureConfigured } from "./lib/azureOpenAI"
 
-const MODEL = process.env.VITE_GEMINI_MODEL || "gemini-2.0-flash"
-const API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "POST,OPTIONS",
+}
 
-export const handler = async (event) => {
-  try {
-    if (!API_KEY) {
-      return { statusCode: 500, body: JSON.stringify({ error: "Missing Gemini API key" }) }
+const MAX_COMPLETION_TOKENS = 8000
+
+export const handler: Handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 200, headers: corsHeaders, body: "" }
+  }
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, headers: corsHeaders, body: JSON.stringify({ error: "Metodo nao permitido." }) }
+  }
+  if (!azureConfigured()) {
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: "Azure OpenAI nao configurado no backend (AZURE_OPENAI_ENDPOINT / AZURE_OPENAI_API_KEY)." }),
     }
+  }
 
+  try {
     const body = JSON.parse(event.body || "{}")
     const { tema, objetivos, metodologia, recursos, avaliacao } = body
 
@@ -28,14 +44,27 @@ Entregue no formato:
 5. Avaliação
 6. Tarefas/Extensão opcional
 `
-    const genAI = new GoogleGenerativeAI(API_KEY)
-    const model = genAI.getGenerativeModel({ model: MODEL })
-    const result = await model.generateContent(prompt)
-    const text = result.response.text()
 
-    return { statusCode: 200, body: JSON.stringify({ plan: text }) }
+    const text = await callAzureChat(
+      [
+        { role: "system", content: "Você é um assistente pedagógico do AvaliaPro. Responda em português do Brasil, de forma clara e estruturada." },
+        { role: "user", content: prompt },
+      ],
+      { maxCompletionTokens: MAX_COMPLETION_TOKENS }
+    )
+
+    return {
+      statusCode: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+      body: JSON.stringify({ plan: text }),
+    }
   } catch (err: any) {
-    console.error(err)
-    return { statusCode: 500, body: JSON.stringify({ error: "Failed to generate plan" }) }
+    console.error("[generate-lesson-plan]", err?.message || err)
+    const status = Number(err?.status) || 500
+    return {
+      statusCode: status >= 400 && status < 600 ? status : 500,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: err?.message || "Falha ao gerar o plano de aula." }),
+    }
   }
 }

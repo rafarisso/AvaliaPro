@@ -1,5 +1,5 @@
 import type { Handler } from "@netlify/functions"
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { callAzureChat, azureConfigured, imagePart, textPart, type ChatPart } from "./lib/azureOpenAI"
 
 type SlideRequest = {
   tema: string
@@ -21,18 +21,9 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 }
 
-const RAW_MODEL = (process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || "gemini-2.0-flash").trim()
-const MODEL = sanitizeModel(RAW_MODEL)
-
-const API_KEY =
-  process.env.GEMINI_API_KEY ||
-  process.env.GOOGLE_GENAI_API_KEY ||
-  process.env.GENAI_API_KEY ||
-  process.env.VITE_GEMINI_API_KEY ||
-  process.env.API_KEY
-
 const MAX_ATTACHMENTS = 5
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
+const MAX_COMPLETION_TOKENS = 8000
 
 const handler: Handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
@@ -43,8 +34,12 @@ const handler: Handler = async (event) => {
     return { statusCode: 405, headers: corsHeaders, body: JSON.stringify({ error: "Metodo nao permitido." }) }
   }
 
-  if (!API_KEY) {
-    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: "GEMINI_API_KEY ausente." }) }
+  if (!azureConfigured()) {
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: "Azure OpenAI nao configurado no backend (AZURE_OPENAI_ENDPOINT / AZURE_OPENAI_API_KEY)." }),
+    }
   }
 
   let payload: SlideRequest
@@ -76,18 +71,23 @@ const handler: Handler = async (event) => {
     })
 
   try {
-    const genAI = new GoogleGenerativeAI(API_KEY)
-    const model = genAI.getGenerativeModel({ model: MODEL })
-
     const userPrompt = buildPrompt({ tema, disciplina, serie, objetivos })
-    const parts = [{ text: userPrompt }, ...buildInlineParts(imageAttachments)]
+    const userContent: ChatPart[] = [
+      textPart(userPrompt),
+      ...imageAttachments.map((att) => imagePart(att.data, att.type || "image/jpeg")),
+    ]
 
-    const response = await model.generateContent({
-      contents: [{ role: "user", parts }],
-      generationConfig: { temperature: 0.5, maxOutputTokens: 1200 },
-    })
+    const text = await callAzureChat(
+      [
+        {
+          role: "system",
+          content: "Voce e o motor pedagogico do AvaliaPro. Cria roteiros de slides para aula em portugues do Brasil e responde sempre em JSON puro, sem markdown.",
+        },
+        { role: "user", content: userContent },
+      ],
+      { maxCompletionTokens: MAX_COMPLETION_TOKENS }
+    )
 
-    const text = response.response.text()
     const slides = parseSlides(text)
 
     return {
@@ -96,7 +96,7 @@ const handler: Handler = async (event) => {
       body: JSON.stringify({ slides }),
     }
   } catch (error: any) {
-    console.error("[generate-slides]", error)
+    console.error("[generate-slides]", error?.message || error)
     const status = Number(error?.status) || 500
     const message = error?.message || "Falha ao gerar slides."
     return { statusCode: status >= 400 && status < 600 ? status : 500, headers: corsHeaders, body: JSON.stringify({ error: message }) }
@@ -121,15 +121,6 @@ function buildPrompt(args: { tema: string; disciplina?: string; serie?: string; 
     .join("\n")
 }
 
-function buildInlineParts(attList: { name: string; type: string; data: string }[]) {
-  return attList.map((att) => ({
-    inlineData: {
-      data: att.data,
-      mimeType: att.type || "application/octet-stream",
-    },
-  }))
-}
-
 function parseSlides(text: string): Slide[] {
   const jsonString = extractJson(text)
   const raw = JSON.parse(jsonString)
@@ -150,11 +141,4 @@ function extractJson(text: string): string {
   const arrMatch = text.match(/\[[\s\S]*\]/)
   if (arrMatch) return `{"slides":${arrMatch[0]}}`
   return text.trim()
-}
-
-function sanitizeModel(raw: string): string {
-  const clean = (raw || "").replace(/^models\//i, "").trim()
-  const match = clean.match(/(gemini[-\w\.]+)/i)
-  if (match && match[1]) return match[1]
-  return "gemini-2.0-flash"
 }
