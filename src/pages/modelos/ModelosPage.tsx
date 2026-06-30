@@ -15,6 +15,7 @@ export default function ModelosPage() {
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [slides, setSlides] = useState<Slide[]>([])
   const [loading, setLoading] = useState(false)
+  const [baixando, setBaixando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -85,10 +86,12 @@ export default function ModelosPage() {
       alert("Gere os slides primeiro.")
       return
     }
+    setErro(null)
+    setBaixando(true)
     try {
       const pptx = new PptxGenJS()
       pptx.title = tema || "Slides"
-      pptx.layout = "16x9"
+      pptx.layout = "LAYOUT_16x9"
       slides.forEach((s, idx) => {
         const slide = pptx.addSlide()
         slide.addText(s.titulo || `Slide ${idx + 1}`, {
@@ -119,10 +122,23 @@ export default function ModelosPage() {
           slide.addText(`Nota: ${s.nota}`, { x: 0.7, y: 4.5, fontSize: 12, color: "6b7280", italic: true })
         }
       })
-      await pptx.writeFile({ fileName: `${tema || "slides"}.pptx` })
+
+      // Gera um blob e baixa manualmente (mais robusto que writeFile no browser)
+      const nomeArquivo = `${sanitizeFileName(tema || "slides")}.pptx`
+      const blob = (await pptx.write({ outputType: "blob" })) as Blob
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = nomeArquivo
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (error: any) {
       console.error("[PPTX]", error)
-      setErro("Não foi possível baixar o PPTX. Tente novamente.")
+      setErro(`Não foi possível baixar o PPTX${error?.message ? `: ${error.message}` : ". Tente novamente."}`)
+    } finally {
+      setBaixando(false)
     }
   }
 
@@ -212,7 +228,14 @@ export default function ModelosPage() {
           {loading ? "Gerando..." : "Gerar slides com IA"}
         </button>
 
-        {erro && <p className="text-sm text-red-600">{erro}</p>}
+        {loading && (
+          <p className="flex items-center gap-2 text-sm text-blue-600">
+            <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            Gerando slides com IA… isso pode levar alguns segundos.
+          </p>
+        )}
+
+        {erro && <p className="text-sm text-red-600 whitespace-pre-wrap">{erro}</p>}
       </div>
 
       {slides.length > 0 && (
@@ -222,9 +245,10 @@ export default function ModelosPage() {
             <button
               type="button"
               onClick={downloadPPTX}
-              className="rounded-xl border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+              disabled={baixando}
+              className="rounded-xl border px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
             >
-              Baixar PPTX
+              {baixando ? "Gerando PPTX..." : "Baixar PPTX"}
             </button>
           </div>
           <div className="space-y-3">
@@ -245,5 +269,17 @@ export default function ModelosPage() {
         </div>
       )}
     </div>
+  )
+}
+
+function sanitizeFileName(name: string): string {
+  return (
+    name
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-zA-Z0-9\-_ ]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .slice(0, 60) || "slides"
   )
 }
