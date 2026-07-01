@@ -5,6 +5,10 @@ import { useToast } from "../../hooks/useToast"
 
 type Mode = "login" | "signup"
 
+// Login com Google desativado até configurarmos o provider no Supabase.
+// Para reativar, basta trocar para true.
+const GOOGLE_LOGIN_ENABLED = false
+
 export default function Login() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -75,20 +79,24 @@ export default function Login() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={entrarComGoogle}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border py-3 font-medium transition hover:bg-gray-50"
-        >
-          <GoogleIcon />
-          {isSignup ? "Cadastrar com Google" : "Entrar com Google"}
-        </button>
+        {GOOGLE_LOGIN_ENABLED && (
+          <>
+            <button
+              type="button"
+              onClick={entrarComGoogle}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border py-3 font-medium transition hover:bg-gray-50"
+            >
+              <GoogleIcon />
+              {isSignup ? "Cadastrar com Google" : "Entrar com Google"}
+            </button>
 
-        <div className="flex items-center gap-3">
-          <span className="h-px flex-1 bg-gray-200" />
-          <span className="text-xs uppercase tracking-widest text-gray-400">ou com e-mail</span>
-          <span className="h-px flex-1 bg-gray-200" />
-        </div>
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs uppercase tracking-widest text-gray-400">ou com e-mail</span>
+              <span className="h-px flex-1 bg-gray-200" />
+            </div>
+          </>
+        )}
 
         <div className="space-y-4">
           <div className="space-y-1">
