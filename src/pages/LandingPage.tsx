@@ -10,18 +10,18 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-6xl items-center gap-12 py-16 md:grid-cols-2">
           <div className="space-y-5">
             <h1 className="text-4xl font-bold leading-tight md:text-5xl">
-              Avaliações e planos com IA <span className="text-primary">em minutos</span>
+              Crie e corrija provas com IA <span className="text-primary">em minutos</span>
             </h1>
             <p className="text-lg text-gray-600">
-              Gemini + Supabase para criar provas, planos e relatórios. Estamos em modo protótipo gratuito — explore
-              tudo sem custo.
+              Gere avaliações, corrija provas manuscritas por foto e acompanhe o desempenho da turma — tudo num só
+              lugar, feito para a rotina do professor.
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <Link
-                to="/dashboard"
+                to="/login?signup=1"
                 className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-white shadow-sm transition hover:bg-primary-dark"
               >
-                Abrir dashboard do protótipo
+                Criar conta grátis
               </Link>
               <Link
                 to="/login"
@@ -30,31 +30,23 @@ export default function LandingPage() {
                 Entrar
               </Link>
             </div>
-            <p className="text-sm text-gray-500">
-              Zero cobranças neste estágio. Use os fluxos e compartilhe feedback com nosso time.
-            </p>
+            <p className="text-sm text-gray-500">Gratuito durante o período de validação.</p>
           </div>
 
           <div className="relative">
             <div className="absolute -inset-4 rounded-full bg-primary/10 blur-2xl" />
-            <div className="relative rounded-2xl border bg-white p-6 shadow-sm">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="rounded-xl border p-4">
-                  <p className="text-xs text-gray-500">Professores</p>
-                  <p className="text-2xl font-semibold">+1.2k</p>
-                </div>
-                <div className="rounded-xl border p-4">
-                  <p className="text-xs text-gray-500">Avaliações geradas</p>
-                  <p className="text-2xl font-semibold">48k</p>
-                </div>
-                <div className="rounded-xl border p-4">
-                  <p className="text-xs text-gray-500">Tempo médio</p>
-                  <p className="text-2xl font-semibold">2min</p>
-                </div>
+            <div className="relative space-y-3 rounded-2xl border bg-white p-6 shadow-sm">
+              <div className="rounded-xl border p-4">
+                <p className="text-sm font-semibold text-gray-900">📝 Gerar avaliações com IA</p>
+                <p className="text-xs text-gray-500">Provas, gabaritos e planos de aula em minutos.</p>
               </div>
-              <div className="mt-4 rounded-xl border p-4">
-                <p className="text-sm text-gray-600">"Minha rotina mudou. Em minutos tenho materiais prontos."</p>
-                <p className="mt-1 text-xs text-gray-500">- Usuário AvaliaPro</p>
+              <div className="rounded-xl border p-4">
+                <p className="text-sm font-semibold text-gray-900">📷 Corrigir por foto</p>
+                <p className="text-xs text-gray-500">A IA lê a prova manuscrita e sugere a nota; você revisa.</p>
+              </div>
+              <div className="rounded-xl border p-4">
+                <p className="text-sm font-semibold text-gray-900">📊 Desempenho da turma</p>
+                <p className="text-xs text-gray-500">Média, nota por aluno e acerto por questão.</p>
               </div>
             </div>
           </div>

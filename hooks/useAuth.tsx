@@ -15,6 +15,7 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   loginWithPassword: (email: string, password: string) => Promise<void>
+  signUpWithPassword: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>
   loginWithOAuth: (provider: 'google' | 'github' | 'azure') => Promise<void>
   logout: () => Promise<void>
 }
@@ -94,6 +95,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(false)
   }
 
+  const signUpWithPassword = async (email: string, password: string) => {
+    const supabase = getSupabase()
+    setLoading(true)
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    })
+    if (error) {
+      setLoading(false)
+      throw error
+    }
+    const nextSession = data.session ?? null
+    // Se a confirmação de e-mail estiver ligada, não há sessão até o usuário confirmar.
+    if (nextSession) {
+      const nextUser = nextSession.user ?? null
+      setSession(nextSession)
+      setUser(nextUser)
+      void auditAccess(nextUser)
+    }
+    setLoading(false)
+    return { needsConfirmation: !nextSession }
+  }
+
   const loginWithOAuth = async (provider: 'google' | 'github' | 'azure') => {
     const supabase = getSupabase()
     const { error } = await supabase.auth.signInWithOAuth({
@@ -118,6 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     user,
     loading,
     loginWithPassword,
+    signUpWithPassword,
     loginWithOAuth,
     logout,
   }
