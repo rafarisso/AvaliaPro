@@ -26,7 +26,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
+      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
       <Route
         path="/dashboard"
@@ -101,11 +101,11 @@ function AppRoutes() {
           </RequireAuth>
         }
       />
-      <Route path="/landing" element={<LandingPage />} />
+      <Route path="/landing" element={<Navigate to="/" replace />} />
       <Route path="/teacher-boost" element={<TeacherBoost />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/health" element={<Health />} />
-      <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
+      <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} replace />} />
     </Routes>
   )
 }

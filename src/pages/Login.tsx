@@ -150,7 +150,7 @@ export default function Login() {
         </p>
 
         <p className="text-center text-xs text-gray-400">
-          <Link to="/landing" className="hover:underline">
+          <Link to="/" className="hover:underline">
             ← Voltar para a página inicial
           </Link>
         </p>
